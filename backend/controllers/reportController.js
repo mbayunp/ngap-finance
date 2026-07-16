@@ -96,6 +96,20 @@ exports.getCashFlow = async (req, res) => {
         `;
         const [result] = await db.query(query, queryParams);
         
+        let dateFilterDetails = '';
+        if (startDate && endDate) {
+            dateFilterDetails = 'AND cb.transaction_date >= ? AND cb.transaction_date <= ?';
+        }
+        
+        const detailsQuery = `
+            SELECT coa.account_name, coa.account_type, SUM(cb.cash_in) as total_in, SUM(cb.cash_out) as total_out 
+            FROM cash_book cb 
+            JOIN chart_of_accounts coa ON cb.account_id = coa.id 
+            WHERE 1=1 ${dateFilterDetails}
+            GROUP BY coa.id, coa.account_name, coa.account_type
+        `;
+        const [details] = await db.query(detailsQuery, queryParams);
+
         const cash_in = parseFloat(result[0].total_cash_in);
         const cash_out = parseFloat(result[0].total_cash_out);
         const net_cash_flow = cash_in - cash_out;
@@ -105,7 +119,8 @@ exports.getCashFlow = async (req, res) => {
             data: {
                 cashIn: cash_in,
                 cashOut: cash_out,
-                netCashFlow: net_cash_flow
+                netCashFlow: net_cash_flow,
+                details: details
             }
         });
     } catch (error) {

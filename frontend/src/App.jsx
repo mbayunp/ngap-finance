@@ -7,6 +7,8 @@ import Penjualan from './pages/Penjualan';
 import Pembelian from './pages/Pembelian';
 import Pengeluaran from './pages/Pengeluaran';
 import Laporan from './pages/Laporan';
+import MasterProduk from './pages/MasterProduk';
+import MasterChannel from './pages/MasterChannel';
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
               <Route path="/purchases" element={<Pembelian />} />
               <Route path="/expenses" element={<Pengeluaran />} />
               <Route path="/reports" element={<Laporan />} />
+              <Route path="/products" element={<MasterProduk />} />
+              <Route path="/channels" element={<MasterChannel />} />
             </Routes>
           </main>
         </div>

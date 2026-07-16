@@ -6,47 +6,61 @@ const Penjualan = () => {
   // 1. State Management
   const [formData, setFormData] = useState({
     transaction_date: new Date().toISOString().split('T')[0],
-    channel_id: 1,
+    channel_id: '',
   });
-  const [qty, setQty] = useState({
-    1: 0,
-    2: 0,
-    3: 0
-  });
+  const [qty, setQty] = useState({});
   const [salesHistory, setSalesHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
 
-  // 2. Data Master (Hardcode sementara)
-  const channels = [
-    { id: 1, name: 'GrabFood' },
-    { id: 2, name: 'GoFood' },
-    { id: 3, name: 'ShopeeFood' },
-    { id: 4, name: 'Offline' }
-  ];
+  // 2. Data Master (Dinamis)
+  const [channels, setChannels] = useState([]);
+  const [products, setProducts] = useState([]);
 
-  const products = [
-    { id: 1, name: 'Mini', price: 15000 },
-    { id: 2, name: 'Original', price: 25000 },
-    { id: 3, name: 'Gila', price: 35000 }
-  ];
-
-  // Fetch Riwayat Penjualan
-  const fetchHistory = async () => {
+  // Fetch Data Master & Riwayat
+  const fetchData = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/sales');
-      if (res.data && res.data.status === 'success') {
-        setSalesHistory(res.data.data);
+      const [salesRes, channelsRes, productsRes] = await Promise.all([
+        axios.get(`${import.meta.env.VITE_API_URL}/api/sales`),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/channels`),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/products`)
+      ]);
+      
+      if (salesRes.data && salesRes.data.status === 'success') {
+        setSalesHistory(salesRes.data.data);
+      }
+      if (channelsRes.data && channelsRes.data.status === 'success') {
+        setChannels(channelsRes.data.data);
+        if (channelsRes.data.data.length > 0) {
+          setFormData(prev => ({ ...prev, channel_id: channelsRes.data.data[0].id }));
+        }
+      }
+      if (productsRes.data && productsRes.data.status === 'success') {
+        setProducts(productsRes.data.data);
       }
     } catch (error) {
-      console.error('Error fetching sales history:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setIsFetching(false);
     }
   };
 
+  const fetchHistory = async () => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/sales`);
+      if (res.data && res.data.status === 'success') {
+        setSalesHistory(res.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching sales history:', error);
+    }
+  };
+
   useEffect(() => {
-    fetchHistory();
+    const initFetch = async () => {
+      await fetchData();
+    };
+    initFetch();
   }, []);
 
   const handleQtyChange = (id, value) => {
@@ -66,9 +80,9 @@ const Penjualan = () => {
       const items = products.map(p => ({
         product_id: p.id,
         productId: p.id, // Fallback property jika API salesController membutuhkannya
-        qty: qty[p.id],
+        qty: qty[p.id] || 0,
         price: p.price,
-        subtotal: qty[p.id] * p.price
+        subtotal: (qty[p.id] || 0) * p.price
       })).filter(item => item.qty > 0);
 
       if (items.length === 0) {
@@ -89,12 +103,12 @@ const Penjualan = () => {
         items: items
       };
 
-      await axios.post('http://localhost:5000/api/sales', payload);
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/sales`, payload);
       
       alert('Transaksi berhasil disimpan!');
       
       // Reset form qty
-      setQty({ 1: 0, 2: 0, 3: 0 });
+      setQty({});
       
       // Refresh tabel riwayat
       fetchHistory();
@@ -109,7 +123,7 @@ const Penjualan = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Yakin ingin menghapus transaksi penjualan ini?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/sales/${id}`);
+        await axios.delete(`${import.meta.env.VITE_API_URL}/api/sales/${id}`);
         alert('Transaksi penjualan berhasil dihapus!');
         fetchHistory();
       } catch (error) {
@@ -182,7 +196,7 @@ const Penjualan = () => {
                     type="number"
                     min="0"
                     className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-center font-semibold text-gray-700"
-                    value={qty[p.id]}
+                    value={qty[p.id] || ''}
                     onChange={(e) => handleQtyChange(p.id, e.target.value)}
                   />
                 </div>

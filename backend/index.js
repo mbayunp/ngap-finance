@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
@@ -14,12 +14,16 @@ const salesRoutes = require('./routes/salesRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const cashbookRoutes = require('./routes/cashbookRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const productRoutes = require('./routes/productRoutes');
+const channelRoutes = require('./routes/channelRoutes');
 
 // API Endpoints
 app.use('/api/sales', salesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/cashbook', cashbookRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/channels', channelRoutes);
 
 // Root Endpoint
 app.get('/', (req, res) => {
@@ -27,6 +31,6 @@ app.get('/', (req, res) => {
 });
 
 // Start Server
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Save, Loader2, CreditCard, Trash, Pencil } from 'lucide-react';
+import { formatInputRupiah, parseRupiahToNumber } from '../utils/formatRupiah';
 
 const Pengeluaran = () => {
   const [formData, setFormData] = useState({
@@ -24,7 +25,7 @@ const Pengeluaran = () => {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/cashbook');
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/cashbook`);
       if (res.data && res.data.status === 'success') {
         // Filter account_id antara 5 sampai 8
         const filteredData = res.data.data.filter(item => item.account_id >= 5 && item.account_id <= 8);
@@ -38,12 +39,16 @@ const Pengeluaran = () => {
   };
 
   useEffect(() => {
-    fetchHistory();
+    const initFetch = async () => {
+      await fetchHistory();
+    };
+    initFetch();
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.nominal || formData.nominal <= 0) {
+    const nominalValue = parseRupiahToNumber(formData.nominal);
+    if (!formData.nominal || nominalValue <= 0) {
       alert('Nominal harus lebih besar dari 0');
       return;
     }
@@ -55,14 +60,14 @@ const Pengeluaran = () => {
         account_id: parseInt(formData.accountId),
         description: formData.description,
         cash_in: 0,
-        cash_out: parseFloat(formData.nominal)
+        cash_out: nominalValue
       };
 
       if (editingId) {
-        await axios.put(`http://localhost:5000/api/cashbook/${editingId}`, payload);
+        await axios.put(`${import.meta.env.VITE_API_URL}/api/cashbook/${editingId}`, payload);
         alert('Data pengeluaran berhasil diupdate!');
       } else {
-        await axios.post('http://localhost:5000/api/cashbook', payload);
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/cashbook`, payload);
         alert('Data pengeluaran berhasil disimpan!');
       }
       
@@ -88,7 +93,7 @@ const Pengeluaran = () => {
       tanggal: dateStr,
       accountId: row.account_id,
       description: row.description,
-      nominal: row.cash_out
+      nominal: formatInputRupiah(row.cash_out)
     });
     setEditingId(row.id);
   };
@@ -96,7 +101,7 @@ const Pengeluaran = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Yakin ingin menghapus transaksi pengeluaran ini?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/cashbook/${id}`);
+        await axios.delete(`${import.meta.env.VITE_API_URL}/api/cashbook/${id}`);
         alert('Data berhasil dihapus!');
         fetchHistory();
       } catch (error) {
@@ -152,13 +157,12 @@ const Pengeluaran = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Total Nominal (Rp)</label>
               <input
-                type="number"
+                type="text"
                 required
-                min="0"
-                placeholder="Misal: 1500000"
+                placeholder="Misal: Rp. 1.500.000"
                 className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
                 value={formData.nominal}
-                onChange={(e) => setFormData({ ...formData, nominal: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, nominal: formatInputRupiah(e.target.value) })}
               />
             </div>
             <div>

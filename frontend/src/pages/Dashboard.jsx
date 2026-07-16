@@ -26,10 +26,10 @@ const Dashboard = () => {
         const endDate = today.toISOString().split('T')[0];
         
         const [summaryResponse, channelResponse, recentResponse, cashFlowResponse] = await Promise.all([
-          axios.get('http://localhost:5000/api/dashboard/summary'),
-          axios.get('http://localhost:5000/api/dashboard/channel-analysis'),
-          axios.get('http://localhost:5000/api/dashboard/recent-activities'),
-          axios.get(`http://localhost:5000/api/reports/cash-flow?startDate=${startDate}&endDate=${endDate}`)
+          axios.get(`${import.meta.env.VITE_API_URL}/api/dashboard/summary`),
+          axios.get(`${import.meta.env.VITE_API_URL}/api/dashboard/channel-analysis`),
+          axios.get(`${import.meta.env.VITE_API_URL}/api/dashboard/recent-activities`),
+          axios.get(`${import.meta.env.VITE_API_URL}/api/reports/cash-flow?startDate=${startDate}&endDate=${endDate}`)
         ]);
 
         // Pastikan response status adalah 'success' (mengikuti format JSON standar backend kita)

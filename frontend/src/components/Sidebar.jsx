@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, DollarSign, ShoppingCart, CreditCard, BarChart2 } from 'lucide-react';
+import { Home, DollarSign, ShoppingCart, CreditCard, BarChart2, Package, LayoutGrid } from 'lucide-react';
 
 const Sidebar = () => {
   const navItems = [
@@ -8,6 +8,8 @@ const Sidebar = () => {
     { name: 'Pembelian', path: '/purchases', icon: <ShoppingCart className="w-5 h-5" /> },
     { name: 'Pengeluaran', path: '/expenses', icon: <CreditCard className="w-5 h-5" /> },
     { name: 'Laporan', path: '/reports', icon: <BarChart2 className="w-5 h-5" /> },
+    { name: 'Master Produk', path: '/products', icon: <Package className="w-5 h-5" /> },
+    { name: 'Master Channel', path: '/channels', icon: <LayoutGrid className="w-5 h-5" /> },
   ];
 
   return (

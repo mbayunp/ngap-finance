@@ -1,31 +1,29 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Loader2, Filter, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Laporan = () => {
   const [activeTab, setActiveTab] = useState('laba-rugi'); // 'laba-rugi' | 'arus-kas'
   
-  // Default filter: awal bulan sampai hari ini
-  const today = new Date();
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-  const currentDay = today.toISOString().split('T')[0];
+  const [currentDate, setCurrentDate] = useState(new Date());
   
-  const [filters, setFilters] = useState({
-    startDate: firstDay,
-    endDate: currentDay
-  });
+  const y = currentDate.getFullYear();
+  const m = String(currentDate.getMonth() + 1).padStart(2, '0');
   
+  const startStr = `${y}-${m}-01`;
+  const lastDay = new Date(y, currentDate.getMonth() + 1, 0).getDate();
+  const endStr = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
+
   const [profitLossData, setProfitLossData] = useState(null);
   const [cashFlowData, setCashFlowData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchReports = async (showLoading = true) => {
+  const fetchReports = async (start, end, showLoading = true) => {
     if (showLoading) setIsLoading(true);
     try {
-      const { startDate, endDate } = filters;
       const [plRes, cfRes] = await Promise.all([
-        axios.get(`http://localhost:5000/api/reports/profit-loss?startDate=${startDate}&endDate=${endDate}`),
-        axios.get(`http://localhost:5000/api/reports/cash-flow?startDate=${startDate}&endDate=${endDate}`)
+        axios.get(`${import.meta.env.VITE_API_URL}/api/reports/profit-loss?startDate=${start}&endDate=${end}`),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/reports/cash-flow?startDate=${start}&endDate=${end}`)
       ]);
       
       if (plRes.data.status === 'success') {
@@ -44,10 +42,20 @@ const Laporan = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchReports(false);
+      fetchReports(startStr, endStr, true);
     }, 0);
     return () => clearTimeout(timer);
-  });
+  }, [startStr, endStr]);
+
+  const monthYearString = currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+
+  const prevMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
 
   const formatIDR = (value) => {
     return new Intl.NumberFormat('id-ID', {
@@ -65,7 +73,7 @@ const Laporan = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:p-8">
         <h2 className="text-xl font-bold text-gray-800 mb-6 text-center border-b border-gray-100 pb-4">
           Laporan Laba Rugi (Accrual Basis)
-          <p className="text-sm font-normal text-gray-500 mt-1">Periode: {filters.startDate} s/d {filters.endDate}</p>
+          <p className="text-sm font-normal text-gray-500 mt-1">Periode: {startStr} s/d {endStr}</p>
         </h2>
         
         <div className="space-y-4 max-w-3xl mx-auto">
@@ -102,13 +110,13 @@ const Laporan = () => {
 
   const renderArusKas = () => {
     if (!cashFlowData) return null;
-    const { cashIn, cashOut, netCashFlow } = cashFlowData;
+    const { cashIn, cashOut, netCashFlow, details } = cashFlowData;
 
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:p-8">
         <h2 className="text-xl font-bold text-gray-800 mb-6 text-center border-b border-gray-100 pb-4">
           Laporan Arus Kas
-          <p className="text-sm font-normal text-gray-500 mt-1">Periode: {filters.startDate} s/d {filters.endDate}</p>
+          <p className="text-sm font-normal text-gray-500 mt-1">Periode: {startStr} s/d {endStr}</p>
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-8">
@@ -132,7 +140,7 @@ const Laporan = () => {
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto mb-8">
           <div className={`flex justify-between items-center p-6 rounded-xl border shadow-sm ${netCashFlow >= 0 ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
             <div className="flex items-center">
               <DollarSign className={`w-8 h-8 mr-3 ${netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`} />
@@ -145,6 +153,39 @@ const Laporan = () => {
             </span>
           </div>
         </div>
+
+        {/* Tabel Rincian Arus Kas */}
+        {details && details.length > 0 && (
+          <div className="max-w-4xl mx-auto">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">Rincian per Kategori Akun</h3>
+            <div className="overflow-x-auto rounded-lg border border-gray-100">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-500 text-sm">
+                    <th className="px-6 py-3 font-medium uppercase tracking-wider text-xs">Nama Akun</th>
+                    <th className="px-6 py-3 font-medium uppercase tracking-wider text-xs">Tipe</th>
+                    <th className="px-6 py-3 font-medium uppercase tracking-wider text-xs text-right">Pemasukan</th>
+                    <th className="px-6 py-3 font-medium uppercase tracking-wider text-xs text-right">Pengeluaran</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm divide-y divide-gray-100">
+                  {details.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50/50">
+                      <td className="px-6 py-4 text-gray-800 font-medium">{item.account_name}</td>
+                      <td className="px-6 py-4 text-gray-500">
+                        <span className={`px-2 py-1 rounded text-xs ${item.account_type === 'REVENUE' ? 'bg-blue-100 text-blue-700' : item.account_type === 'EXPENSE' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-700'}`}>
+                          {item.account_type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right text-green-600 font-medium">{formatIDR(item.total_in)}</td>
+                      <td className="px-6 py-4 text-right text-red-600 font-medium">{formatIDR(item.total_out)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -156,33 +197,26 @@ const Laporan = () => {
         <p className="text-gray-500 mt-1">Analisis performa keuangan bisnis Anda dengan detail laporan.</p>
       </div>
 
-      {/* Filter Card */}
-      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-end md:items-center gap-4">
-        <div className="w-full md:w-auto">
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">Dari Tanggal</label>
-          <input
-            type="date"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-red-500 bg-gray-50 text-gray-700"
-            value={filters.startDate}
-            onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-          />
-        </div>
-        <div className="w-full md:w-auto">
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">Sampai Tanggal</label>
-          <input
-            type="date"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-red-500 bg-gray-50 text-gray-700"
-            value={filters.endDate}
-            onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-          />
-        </div>
-        <button
-          onClick={fetchReports}
-          disabled={isLoading}
-          className="w-full md:w-auto px-6 py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-lg transition-colors flex items-center justify-center disabled:opacity-70 shadow-sm"
+      {/* Filter Card / Navigasi Bulan */}
+      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+        <button 
+          onClick={prevMonth}
+          className="p-2 flex items-center text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
         >
-          {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Filter className="w-4 h-4 mr-2" />}
-          Terapkan Filter
+          <ChevronLeft className="w-5 h-5 mr-1" />
+          <span className="hidden sm:inline font-medium">Bulan Sebelumnya</span>
+        </button>
+        
+        <h2 className="text-xl font-bold text-gray-800">
+          {monthYearString}
+        </h2>
+        
+        <button 
+          onClick={nextMonth}
+          className="p-2 flex items-center text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+        >
+          <span className="hidden sm:inline font-medium">Bulan Selanjutnya</span>
+          <ChevronRight className="w-5 h-5 ml-1" />
         </button>
       </div>
 
