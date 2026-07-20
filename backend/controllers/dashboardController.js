@@ -31,12 +31,26 @@ exports.getDashboardSummary = async (req, res) => {
         `);
         const totalPenjualanBulanIni = parseFloat(salesResult[0].total_penjualan_bulan_ini);
 
+        // 4. Arus Kas Bulan Ini (Total Kas Masuk dan Total Kas Keluar)
+        const [cashFlowResult] = await db.query(`
+            SELECT 
+                COALESCE(SUM(cash_in), 0) AS total_kas_masuk, 
+                COALESCE(SUM(cash_out), 0) AS total_kas_keluar 
+            FROM cash_book
+            WHERE MONTH(transaction_date) = MONTH(CURRENT_DATE()) 
+              AND YEAR(transaction_date) = YEAR(CURRENT_DATE())
+        `);
+        const totalKasMasuk = parseFloat(cashFlowResult[0].total_kas_masuk) || 0;
+        const totalKasKeluar = parseFloat(cashFlowResult[0].total_kas_keluar) || 0;
+
         res.status(200).json({
             status: 'success',
             data: {
                 total_kas: totalKas,
                 piutang_aktif: totalPiutang,
-                penjualan_bulan_ini: totalPenjualanBulanIni
+                penjualan_bulan_ini: totalPenjualanBulanIni,
+                totalKasMasuk: totalKasMasuk,
+                totalKasKeluar: totalKasKeluar
             }
         });
     } catch (error) {

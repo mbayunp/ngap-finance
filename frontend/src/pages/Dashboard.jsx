@@ -37,7 +37,9 @@ const Dashboard = () => {
           setSummaryData({
             total_kas: summaryResponse.data.data.total_kas || 0,
             piutang_aktif: summaryResponse.data.data.piutang_aktif || 0,
-            penjualan_bulan_ini: summaryResponse.data.data.penjualan_bulan_ini || 0
+            penjualan_bulan_ini: summaryResponse.data.data.penjualan_bulan_ini || 0,
+            totalKasMasuk: summaryResponse.data.data.totalKasMasuk || 0,
+            totalKasKeluar: summaryResponse.data.data.totalKasKeluar || 0
           });
         }
 
@@ -141,15 +143,15 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-5 rounded-xl border border-green-100 bg-green-50 flex flex-col justify-center">
             <p className="text-sm font-medium text-green-600 mb-1">Total Kas Masuk</p>
-            <p className="text-2xl font-bold text-green-700">{formatIDR(cashFlow.cashIn)}</p>
+            <p className="text-2xl font-bold text-green-700">{formatIDR(summaryData.totalKasMasuk || 0)}</p>
           </div>
           <div className="p-5 rounded-xl border border-red-100 bg-red-50 flex flex-col justify-center">
             <p className="text-sm font-medium text-red-600 mb-1">Total Kas Keluar</p>
-            <p className="text-2xl font-bold text-red-700">{formatIDR(cashFlow.cashOut)}</p>
+            <p className="text-2xl font-bold text-red-700">{formatIDR(summaryData.totalKasKeluar || 0)}</p>
           </div>
           <div className="p-5 rounded-xl border border-blue-100 bg-blue-50 flex flex-col justify-center">
             <p className="text-sm font-medium text-blue-600 mb-1">Net Cash Flow</p>
-            <p className="text-2xl font-bold text-blue-700">{formatIDR(cashFlow.netCashFlow)}</p>
+            <p className="text-2xl font-bold text-blue-700">{formatIDR((summaryData.totalKasMasuk || 0) - (summaryData.totalKasKeluar || 0))}</p>
           </div>
         </div>
       </div>
