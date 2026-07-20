@@ -172,7 +172,7 @@ const Pengeluaran = () => {
                 value={formData.accountId}
                 onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
               >
-                {categories.map(c => (
+                {categories.filter(c => c.account_code.startsWith('5') || c.account_code.startsWith('6') || c.account_code.startsWith('7')).map(c => (
                   <option key={c.id} value={c.id}>{c.account_code} - {c.account_name}</option>
                 ))}
               </select>

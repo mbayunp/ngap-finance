@@ -168,7 +168,7 @@ const Pemasukan = () => {
                 value={formData.accountId}
                 onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
               >
-                {categories.map(c => (
+                {categories.filter(c => c.account_code.startsWith('4') || c.account_code.startsWith('8')).map(c => (
                   <option key={c.id} value={c.id}>{c.account_code} - {c.account_name}</option>
                 ))}
               </select>
