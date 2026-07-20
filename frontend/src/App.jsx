@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
@@ -10,15 +11,17 @@ import MasterProduk from './pages/MasterProduk';
 import MasterChannel from './pages/MasterChannel';
 
 function App() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL}>
       <div className="flex h-screen bg-gray-50 font-sans text-gray-900">
         {/* Sidebar Layout */}
-        <Sidebar />
+        <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
         
         {/* Main Content Layout (Mendorong konten ke kanan agar tidak tertimpa sidebar fixed di desktop) */}
-        <div className="flex-1 flex flex-col md:ml-64 overflow-hidden">
-          <Navbar />
+        <div className="flex-1 flex flex-col md:ml-64 overflow-hidden w-full">
+          <Navbar onMenuClick={() => setIsSidebarOpen(true)} />
           
           {/* Area Konten Utama yang bisa di-scroll */}
           <main className="flex-1 overflow-y-auto p-4 md:p-8">

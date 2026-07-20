@@ -1,9 +1,16 @@
+import { Menu } from 'lucide-react';
 
-const Navbar = () => {
+const Navbar = ({ onMenuClick }) => {
   return (
-    <header className="bg-white border-b border-gray-100 h-16 flex items-center justify-between px-6 lg:px-8 shadow-sm">
+    <header className="bg-white border-b border-gray-100 h-16 flex items-center justify-between px-4 lg:px-8 shadow-sm shrink-0">
       <div className="flex items-center">
-        <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Logo" className="h-8 w-auto mr-3" />
+        <button 
+          onClick={onMenuClick}
+          className="mr-3 p-2 -ml-2 rounded-md text-gray-600 hover:bg-gray-100 md:hidden"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+        <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Logo" className="h-8 w-auto mr-3 hidden sm:block md:hidden lg:block" />
         <h2 className="text-xl font-bold text-gray-800 lg:hidden">Ngap Finance</h2>
         <h2 className="text-xl font-semibold text-gray-800 hidden lg:block">Overview</h2>
       </div>
