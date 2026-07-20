@@ -41,8 +41,8 @@ const MasterProduk = () => {
     setEditingId(product.id);
     setFormData({
       name: product.name,
-      price: formatInputRupiah(product.price),
-      default_hpp: formatInputRupiah(product.default_hpp)
+      price: formatInputRupiah(Math.round(Number(product.price))),
+      default_hpp: formatInputRupiah(Math.round(Number(product.default_hpp)))
     });
   };
 

@@ -85,7 +85,7 @@ const Pembelian = () => {
     setFormData({
       tanggal: dateStr,
       description: row.description,
-      nominal: formatInputRupiah(row.cash_out)
+      nominal: formatInputRupiah(Math.round(Number(row.cash_out)))
     });
     setEditingId(row.id);
   };

@@ -94,7 +94,7 @@ const Pengeluaran = () => {
       tanggal: dateStr,
       accountId: row.account_id,
       description: row.description,
-      nominal: formatInputRupiah(row.cash_out)
+      nominal: formatInputRupiah(Math.round(Number(row.cash_out)))
     });
     setEditingId(row.id);
   };
