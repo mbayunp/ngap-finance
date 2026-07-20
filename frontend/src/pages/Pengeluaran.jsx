@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Save, Loader2, CreditCard, Trash, Pencil } from 'lucide-react';
 import { formatInputRupiah, parseRupiahToNumber } from '../utils/formatRupiah';
+import Swal from 'sweetalert2';
 
 const Pengeluaran = () => {
   const [formData, setFormData] = useState({
@@ -49,7 +50,7 @@ const Pengeluaran = () => {
     e.preventDefault();
     const nominalValue = parseRupiahToNumber(formData.nominal);
     if (!formData.nominal || nominalValue <= 0) {
-      alert('Nominal harus lebih besar dari 0');
+      Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Nominal harus lebih besar dari 0' });
       return;
     }
 
@@ -65,10 +66,10 @@ const Pengeluaran = () => {
 
       if (editingId) {
         await axios.put(`${import.meta.env.VITE_API_URL}/api/cashbook/${editingId}`, payload);
-        alert('Data pengeluaran berhasil diupdate!');
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data pengeluaran berhasil diupdate!' });
       } else {
         await axios.post(`${import.meta.env.VITE_API_URL}/api/cashbook`, payload);
-        alert('Data pengeluaran berhasil disimpan!');
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data pengeluaran berhasil disimpan!' });
       }
       
       setFormData(prev => ({
@@ -81,7 +82,7 @@ const Pengeluaran = () => {
       fetchHistory();
     } catch (error) {
       console.error('Error saving data:', error);
-      alert('Gagal menyimpan data pengeluaran!');
+      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menyimpan data pengeluaran!' });
     } finally {
       setIsLoading(false);
     }
@@ -99,14 +100,24 @@ const Pengeluaran = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Yakin ingin menghapus transaksi pengeluaran ini?')) {
+    const result = await Swal.fire({
+      title: 'Apakah Anda yakin?',
+      text: "Data pengeluaran ini akan dihapus!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!'
+    });
+    
+    if (result.isConfirmed) {
       try {
         await axios.delete(`${import.meta.env.VITE_API_URL}/api/cashbook/${id}`);
-        alert('Data berhasil dihapus!');
+        Swal.fire('Terhapus!', 'Data berhasil dihapus!', 'success');
         fetchHistory();
       } catch (error) {
         console.error('Error deleting data:', error);
-        alert('Gagal menghapus data.');
+        Swal.fire('Gagal!', 'Gagal menghapus data.', 'error');
       }
     }
   };

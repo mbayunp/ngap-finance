@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Save, Loader2, Trash, Edit2 } from 'lucide-react';
 import { formatInputRupiah, parseRupiahToNumber } from '../utils/formatRupiah';
+import Swal from 'sweetalert2';
 
 const MasterProduk = () => {
   const [products, setProducts] = useState([]);
@@ -63,31 +64,41 @@ const MasterProduk = () => {
 
       if (editingId) {
         await axios.put(`${import.meta.env.VITE_API_URL}/api/products/${editingId}`, payload);
-        alert('Produk berhasil diupdate!');
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Produk berhasil diupdate!' });
       } else {
         await axios.post(`${import.meta.env.VITE_API_URL}/api/products`, payload);
-        alert('Produk berhasil ditambahkan!');
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Produk berhasil ditambahkan!' });
       }
       
       handleCancel();
       fetchProducts();
     } catch (error) {
       console.error('Error saving product:', error);
-      alert('Gagal menyimpan produk.');
+      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menyimpan produk.' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Yakin ingin menghapus produk ini?')) {
+    const result = await Swal.fire({
+      title: 'Apakah Anda yakin?',
+      text: "Produk ini akan dihapus!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!'
+    });
+    
+    if (result.isConfirmed) {
       try {
         await axios.delete(`${import.meta.env.VITE_API_URL}/api/products/${id}`);
-        alert('Produk berhasil dihapus!');
+        Swal.fire('Terhapus!', 'Produk berhasil dihapus!', 'success');
         fetchProducts();
       } catch (error) {
         console.error('Error deleting product:', error);
-        alert('Gagal menghapus produk. Mungkin produk ini sedang digunakan dalam transaksi.');
+        Swal.fire('Gagal!', 'Gagal menghapus produk. Mungkin produk ini sedang digunakan dalam transaksi.', 'error');
       }
     }
   };

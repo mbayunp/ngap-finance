@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Save, Loader2, Trash, Edit2 } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const MasterChannel = () => {
   const [channels, setChannels] = useState([]);
@@ -62,31 +63,41 @@ const MasterChannel = () => {
 
       if (editingId) {
         await axios.put(`${import.meta.env.VITE_API_URL}/api/channels/${editingId}`, payload);
-        alert('Channel berhasil diupdate!');
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Channel berhasil diupdate!' });
       } else {
         await axios.post(`${import.meta.env.VITE_API_URL}/api/channels`, payload);
-        alert('Channel berhasil ditambahkan!');
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Channel berhasil ditambahkan!' });
       }
       
       handleCancel();
       fetchChannels();
     } catch (error) {
       console.error('Error saving channel:', error);
-      alert('Gagal menyimpan channel.');
+      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menyimpan channel.' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Yakin ingin menghapus channel ini?')) {
+    const result = await Swal.fire({
+      title: 'Apakah Anda yakin?',
+      text: "Channel ini akan dihapus!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!'
+    });
+    
+    if (result.isConfirmed) {
       try {
         await axios.delete(`${import.meta.env.VITE_API_URL}/api/channels/${id}`);
-        alert('Channel berhasil dihapus!');
+        Swal.fire('Terhapus!', 'Channel berhasil dihapus!', 'success');
         fetchChannels();
       } catch (error) {
         console.error('Error deleting channel:', error);
-        alert('Gagal menghapus channel. Mungkin channel ini sedang digunakan dalam transaksi.');
+        Swal.fire('Gagal!', 'Gagal menghapus channel. Mungkin channel ini sedang digunakan dalam transaksi.', 'error');
       }
     }
   };

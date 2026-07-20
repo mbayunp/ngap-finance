@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Save, Loader2, Trash } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const Penjualan = () => {
   // 1. State Management
@@ -86,7 +87,7 @@ const Penjualan = () => {
       })).filter(item => item.qty > 0);
 
       if (items.length === 0) {
-        alert('Minimal masukkan jumlah untuk satu produk!');
+        Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Minimal masukkan jumlah untuk satu produk!' });
         setIsLoading(false);
         return;
       }
@@ -105,7 +106,7 @@ const Penjualan = () => {
 
       await axios.post(`${import.meta.env.VITE_API_URL}/api/sales`, payload);
       
-      alert('Transaksi berhasil disimpan!');
+      Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Transaksi berhasil disimpan!' });
       
       // Reset form qty
       setQty({});
@@ -114,21 +115,31 @@ const Penjualan = () => {
       fetchHistory();
     } catch (error) {
       console.error('Error saving transaction:', error);
-      alert('Gagal menyimpan transaksi. Pastikan backend berjalan dengan baik.');
+      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menyimpan transaksi. Pastikan backend berjalan dengan baik.' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Yakin ingin menghapus transaksi penjualan ini?')) {
+    const result = await Swal.fire({
+      title: 'Apakah Anda yakin?',
+      text: "Transaksi penjualan ini akan dihapus!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!'
+    });
+    
+    if (result.isConfirmed) {
       try {
         await axios.delete(`${import.meta.env.VITE_API_URL}/api/sales/${id}`);
-        alert('Transaksi penjualan berhasil dihapus!');
+        Swal.fire('Terhapus!', 'Transaksi penjualan berhasil dihapus!', 'success');
         fetchHistory();
       } catch (error) {
         console.error('Error deleting sale:', error);
-        alert('Gagal menghapus transaksi penjualan.');
+        Swal.fire('Gagal!', 'Gagal menghapus transaksi penjualan.', 'error');
       }
     }
   };

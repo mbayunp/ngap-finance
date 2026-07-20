@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Loader2, TrendingUp, TrendingDown, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const Laporan = () => {
   const [activeTab, setActiveTab] = useState('laba-rugi'); // 'laba-rugi' | 'arus-kas'
@@ -34,7 +35,7 @@ const Laporan = () => {
       }
     } catch (error) {
       console.error('Error fetching reports:', error);
-      alert('Gagal mengambil data laporan. Pastikan backend berjalan.');
+      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal mengambil data laporan. Pastikan backend berjalan.' });
     } finally {
       setIsLoading(false);
     }
