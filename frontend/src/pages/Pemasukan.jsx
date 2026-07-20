@@ -169,7 +169,7 @@ const Pemasukan = () => {
                 onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
               >
                 {categories.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.id} value={c.id}>{c.account_code} - {c.account_name}</option>
                 ))}
               </select>
             </div>
