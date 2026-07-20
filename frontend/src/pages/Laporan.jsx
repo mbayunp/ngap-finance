@@ -68,41 +68,66 @@ const Laporan = () => {
 
   const renderLabaRugi = () => {
     if (!profitLossData) return null;
-    const { pendapatan, hpp, labaKotor, opex, labaBersih } = profitLossData;
+    const { pendapatan, hpp, labaKotor, opex, labaBersih, rincianBeban } = profitLossData;
 
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:p-8">
         <h2 className="text-xl font-bold text-gray-800 mb-6 text-center border-b border-gray-100 pb-4">
-          Laporan Laba Rugi (Accrual Basis)
+          Laporan Laba Rugi
           <p className="text-sm font-normal text-gray-500 mt-1">Periode: {startStr} s/d {endStr}</p>
         </h2>
         
-        <div className="space-y-4 max-w-3xl mx-auto">
-          <div className="flex justify-between items-center py-2">
-            <span className="text-gray-700 font-medium">Pendapatan Kotor (Penjualan)</span>
-            <span className="text-gray-900 font-semibold">{formatIDR(pendapatan)}</span>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b border-gray-100 pb-4">
-            <span className="text-gray-700 font-medium">Harga Pokok Penjualan (HPP)</span>
-            <span className="text-red-600 font-semibold">({formatIDR(hpp)})</span>
-          </div>
-          <div className="flex justify-between items-center py-3 bg-gray-50 px-4 rounded-lg">
-            <span className="text-gray-800 font-bold">Laba Kotor</span>
-            <span className="text-gray-900 font-bold">{formatIDR(labaKotor)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center py-2 pt-4 border-b border-gray-100 pb-4">
-            <span className="text-gray-700 font-medium">Total Beban Operasional (OPEX) & Komisi</span>
-            <span className="text-red-600 font-semibold">({formatIDR(opex)})</span>
-          </div>
-          
-          <div className={`flex justify-between items-center py-4 px-4 rounded-lg mt-6 shadow-sm ${labaBersih >= 0 ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-            <span className={`font-bold text-lg ${labaBersih >= 0 ? 'text-green-800' : 'text-red-800'}`}>
-              Laba Bersih
-            </span>
-            <span className={`font-bold text-xl ${labaBersih >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-              {formatIDR(labaBersih)}
-            </span>
+        <div className="max-w-4xl mx-auto">
+          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+            <table className="w-full text-left border-collapse">
+              <tbody className="text-sm divide-y divide-gray-100">
+                
+                <tr className="bg-gray-50/80">
+                  <td colSpan="2" className="px-6 py-3 font-bold text-gray-800">PENDAPATAN & BEBAN POKOK</td>
+                </tr>
+                <tr className="hover:bg-gray-50/50">
+                  <td className="px-6 py-3 pl-10 text-gray-700 font-medium">Pendapatan Usaha</td>
+                  <td className="px-6 py-3 text-right font-medium text-gray-900">{formatIDR(pendapatan)}</td>
+                </tr>
+                <tr className="hover:bg-gray-50/50">
+                  <td className="px-6 py-3 pl-10 text-gray-700 font-medium">Harga Pokok Penjualan (HPP)</td>
+                  <td className="px-6 py-3 text-right font-medium text-red-600">({formatIDR(hpp)})</td>
+                </tr>
+                <tr className="bg-gray-50 border-t-2 border-gray-200">
+                  <td className="px-6 py-4 font-bold text-gray-800 uppercase">Laba Kotor</td>
+                  <td className="px-6 py-4 text-right font-bold text-gray-900">{formatIDR(labaKotor)}</td>
+                </tr>
+
+                <tr className="bg-gray-50/80 mt-4 border-t-4 border-white">
+                  <td colSpan="2" className="px-6 py-3 font-bold text-gray-800">BEBAN OPERASIONAL</td>
+                </tr>
+                {rincianBeban && rincianBeban.length > 0 ? (
+                  rincianBeban.map((beban, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50/50">
+                      <td className="px-6 py-2 pl-10 text-gray-700">{beban.account_name}</td>
+                      <td className="px-6 py-2 text-right font-medium text-gray-800">{formatIDR(beban.total)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-6 py-2 pl-10 text-gray-400 italic">Tidak ada rincian beban</td>
+                    <td className="px-6 py-2 text-right text-gray-400">-</td>
+                  </tr>
+                )}
+                <tr className="border-b-2 border-gray-200">
+                  <td className="px-6 py-3 pl-10 font-semibold text-gray-700 text-right">Total Beban Operasional</td>
+                  <td className="px-6 py-3 text-right font-bold text-red-600">({formatIDR(opex)})</td>
+                </tr>
+
+                <tr className={`border-t border-gray-300 ${labaBersih >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                  <td className="px-6 py-5 font-bold text-xl text-gray-900 uppercase">LABA BERSIH</td>
+                  <td className={`px-6 py-5 text-right font-bold text-2xl ${labaBersih >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                    {formatIDR(labaBersih)}
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -111,7 +136,42 @@ const Laporan = () => {
 
   const renderArusKas = () => {
     if (!cashFlowData) return null;
-    const { cashIn, cashOut, netCashFlow, details } = cashFlowData;
+    const { 
+      saldoAwal, 
+      operasional, 
+      investasi, 
+      pendanaan, 
+      totalOperasional, 
+      totalInvestasi, 
+      totalPendanaan, 
+      netCashFlow, 
+      saldoAkhir 
+    } = cashFlowData;
+
+    const renderTableGroup = (title, data, subtotal, isLast = false) => (
+      <>
+        <tr className="bg-gray-50/80">
+          <td colSpan="2" className="px-6 py-3 font-bold text-gray-800">{title}</td>
+        </tr>
+        {data && data.length > 0 ? (
+          data.map((item, idx) => (
+            <tr key={idx} className="hover:bg-gray-50/50">
+              <td className="px-6 py-2 pl-10 text-gray-700">{item.account_name}</td>
+              <td className="px-6 py-2 text-right font-medium text-gray-800">{formatIDR(item.net)}</td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td className="px-6 py-2 pl-10 text-gray-400 italic">Tidak ada transaksi</td>
+            <td className="px-6 py-2 text-right text-gray-400">-</td>
+          </tr>
+        )}
+        <tr className={!isLast ? "border-b border-gray-200" : ""}>
+          <td className="px-6 py-3 font-semibold text-gray-700 pl-10 text-right">Jumlah Kas Tersedia Dari {title.substring(17)}</td>
+          <td className="px-6 py-3 text-right font-bold text-gray-900 border-t border-gray-200">{formatIDR(subtotal)}</td>
+        </tr>
+      </>
+    );
 
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:p-8">
@@ -120,73 +180,44 @@ const Laporan = () => {
           <p className="text-sm font-normal text-gray-500 mt-1">Periode: {startStr} s/d {endStr}</p>
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-8">
-          <div className="bg-green-50 border border-green-100 p-5 rounded-xl flex items-center shadow-sm hover:shadow-md transition-shadow">
-            <div className="p-3 bg-green-100 text-green-600 rounded-lg mr-4">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm text-green-600 font-medium mb-1">Total Kas Masuk</p>
-              <h3 className="text-xl font-bold text-green-800">{formatIDR(cashIn)}</h3>
-            </div>
-          </div>
-          <div className="bg-red-50 border border-red-100 p-5 rounded-xl flex items-center shadow-sm hover:shadow-md transition-shadow">
-            <div className="p-3 bg-red-100 text-red-600 rounded-lg mr-4">
-              <TrendingDown className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm text-red-600 font-medium mb-1">Total Kas Keluar</p>
-              <h3 className="text-xl font-bold text-red-800">{formatIDR(cashOut)}</h3>
-            </div>
+        <div className="max-w-4xl mx-auto">
+          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+            <table className="w-full text-left border-collapse">
+              <tbody className="text-sm divide-y divide-gray-100">
+                
+                {/* Saldo Awal */}
+                <tr className="bg-gray-50">
+                  <td className="px-6 py-4 font-bold text-lg text-gray-800">SALDO AWAL KAS</td>
+                  <td className="px-6 py-4 text-right font-bold text-lg text-gray-900">{formatIDR(saldoAwal)}</td>
+                </tr>
+
+                {/* Group Operasional */}
+                {renderTableGroup("A. Arus Kas Dari Kegiatan Operasional", operasional, totalOperasional)}
+
+                {/* Group Investasi */}
+                {renderTableGroup("B. Arus Kas Dari Kegiatan Investasi", investasi, totalInvestasi)}
+
+                {/* Group Pendanaan */}
+                {renderTableGroup("C. Arus Kas Dari Kegiatan Pendanaan", pendanaan, totalPendanaan, true)}
+
+                {/* Net Cash Flow */}
+                <tr className="bg-gray-50 border-t-2 border-gray-300">
+                  <td className="px-6 py-4 font-bold text-gray-800">PERGERAKAN BERSIH ATAS KAS (A+B+C)</td>
+                  <td className={`px-6 py-4 text-right font-bold ${netCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                    {formatIDR(netCashFlow)}
+                  </td>
+                </tr>
+
+                {/* Saldo Akhir */}
+                <tr className="bg-gray-100 border-t border-gray-300">
+                  <td className="px-6 py-5 font-bold text-xl text-gray-900 uppercase">SALDO AKHIR KAS</td>
+                  <td className="px-6 py-5 text-right font-bold text-2xl text-blue-800">{formatIDR(saldoAkhir)}</td>
+                </tr>
+
+              </tbody>
+            </table>
           </div>
         </div>
-
-        <div className="max-w-4xl mx-auto mb-8">
-          <div className={`flex justify-between items-center p-6 rounded-xl border shadow-sm ${netCashFlow >= 0 ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
-            <div className="flex items-center">
-              <DollarSign className={`w-8 h-8 mr-3 ${netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`} />
-              <span className={`font-bold text-lg ${netCashFlow >= 0 ? 'text-green-800' : 'text-red-800'}`}>
-                Net Cash Flow
-              </span>
-            </div>
-            <span className={`font-bold text-2xl ${netCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-              {formatIDR(netCashFlow)}
-            </span>
-          </div>
-        </div>
-
-        {/* Tabel Rincian Arus Kas */}
-        {details && details.length > 0 && (
-          <div className="max-w-4xl mx-auto">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">Rincian per Kategori Akun</h3>
-            <div className="overflow-x-auto rounded-lg border border-gray-100">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 text-gray-500 text-sm">
-                    <th className="px-6 py-3 font-medium uppercase tracking-wider text-xs">Nama Akun</th>
-                    <th className="px-6 py-3 font-medium uppercase tracking-wider text-xs">Tipe</th>
-                    <th className="px-6 py-3 font-medium uppercase tracking-wider text-xs text-right">Pemasukan</th>
-                    <th className="px-6 py-3 font-medium uppercase tracking-wider text-xs text-right">Pengeluaran</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm divide-y divide-gray-100">
-                  {details.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50/50">
-                      <td className="px-6 py-4 text-gray-800 font-medium">{item.account_name}</td>
-                      <td className="px-6 py-4 text-gray-500">
-                        <span className={`px-2 py-1 rounded text-xs ${item.account_type === 'REVENUE' ? 'bg-blue-100 text-blue-700' : item.account_type === 'EXPENSE' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-700'}`}>
-                          {item.account_type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right text-green-600 font-medium">{formatIDR(item.total_in)}</td>
-                      <td className="px-6 py-4 text-right text-red-600 font-medium">{formatIDR(item.total_out)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
       </div>
     );
   };

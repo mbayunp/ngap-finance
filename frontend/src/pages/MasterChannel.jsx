@@ -11,6 +11,7 @@ const MasterChannel = () => {
   
   const [formData, setFormData] = useState({
     name: '',
+    type: 'Direct',
     commission_rate: '',
     settlement_lag_days: ''
   });
@@ -40,6 +41,7 @@ const MasterChannel = () => {
     setEditingId(channel.id);
     setFormData({
       name: channel.name,
+      type: channel.type || 'Direct',
       commission_rate: channel.commission_rate,
       settlement_lag_days: channel.settlement_lag_days
     });
@@ -47,7 +49,7 @@ const MasterChannel = () => {
 
   const handleCancel = () => {
     setEditingId(null);
-    setFormData({ name: '', commission_rate: '', settlement_lag_days: '' });
+    setFormData({ name: '', type: 'Direct', commission_rate: '', settlement_lag_days: '' });
   };
 
   const handleSubmit = async (e) => {
@@ -57,6 +59,7 @@ const MasterChannel = () => {
     try {
       const payload = {
         name: formData.name,
+        type: formData.type,
         commission_rate: parseFloat(formData.commission_rate),
         settlement_lag_days: parseInt(formData.settlement_lag_days, 10)
       };
@@ -115,7 +118,7 @@ const MasterChannel = () => {
           {editingId ? 'Edit Channel' : 'Tambah Channel Baru'}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Nama Channel</label>
               <input
@@ -126,6 +129,17 @@ const MasterChannel = () => {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Contoh: GoFood"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipe Channel</label>
+              <select
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              >
+                <option value="Direct">Direct</option>
+                <option value="Platform">Platform</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Komisi (Rate)</label>
@@ -193,6 +207,7 @@ const MasterChannel = () => {
               <tr className="bg-white text-gray-500 text-sm border-b border-gray-100">
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">ID</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Nama Channel</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Tipe Channel</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-right">Komisi Rate</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-right">Settlement Lag</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-center">Aksi</th>
@@ -201,14 +216,14 @@ const MasterChannel = () => {
             <tbody className="text-sm divide-y divide-gray-50">
               {isFetching ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-red-500" />
                     Memuat data...
                   </td>
                 </tr>
               ) : channels.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                     <div className="text-gray-400 mb-2 text-4xl">🏢</div>
                     Belum ada data channel.
                   </td>
@@ -218,6 +233,11 @@ const MasterChannel = () => {
                   <tr key={row.id} className="hover:bg-gray-50/80 transition-colors">
                     <td className="px-6 py-4 text-gray-600">{row.id}</td>
                     <td className="px-6 py-4 font-medium text-gray-800">{row.name}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${row.type === 'Platform' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>
+                        {row.type || 'Direct'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-right text-gray-600">{(row.commission_rate * 100).toFixed(1)}%</td>
                     <td className="px-6 py-4 text-right text-gray-600">{row.settlement_lag_days} Hari</td>
                     <td className="px-6 py-4 flex justify-center space-x-2">

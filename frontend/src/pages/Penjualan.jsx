@@ -57,6 +57,31 @@ const Penjualan = () => {
     }
   };
 
+  const handleSettlement = async (id) => {
+    try {
+      const confirm = await Swal.fire({
+        title: 'Cairkan Dana?',
+        text: 'Tindakan ini akan mengubah status piutang menjadi Kas Masuk secara permanen.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#ef4444',
+        confirmButtonText: 'Ya, Cairkan!'
+      });
+
+      if (confirm.isConfirmed) {
+        const res = await axios.put(`${import.meta.env.VITE_API_URL}/api/sales/${id}/settle`);
+        if (res.data.status === 'success') {
+          Swal.fire('Berhasil', 'Dana berhasil dicairkan dan masuk ke Buku Kas!', 'success');
+          fetchHistory();
+        }
+      }
+    } catch (error) {
+      console.error('Error settling sale:', error);
+      Swal.fire('Gagal', 'Terjadi kesalahan saat memproses pencairan dana.', 'error');
+    }
+  };
+
   useEffect(() => {
     const initFetch = async () => {
       await fetchData();
@@ -289,13 +314,26 @@ const Penjualan = () => {
                         {formatIDR(net)}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                          status === 'PAID' || status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {status}
-                        </span>
+                        {status === 'PAID' || status === 'SETTLED' ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                            LUNAS
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">
+                            PENDING
+                          </span>
+                        )}
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-6 py-4 text-center flex justify-center items-center space-x-2">
+                        {status === 'PENDING' && (
+                          <button
+                            onClick={() => handleSettlement(row.id)}
+                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+                            title="Cairkan Dana"
+                          >
+                            Cairkan Dana
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDelete(row.id)}
                           className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"

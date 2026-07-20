@@ -6,9 +6,11 @@ import Dashboard from './pages/Dashboard';
 import Penjualan from './pages/Penjualan';
 import Pembelian from './pages/Pembelian';
 import Pengeluaran from './pages/Pengeluaran';
+import Pemasukan from './pages/Pemasukan';
 import Laporan from './pages/Laporan';
 import MasterProduk from './pages/MasterProduk';
 import MasterChannel from './pages/MasterChannel';
+import MasterKategori from './pages/MasterKategori';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -30,9 +32,11 @@ function App() {
               <Route path="/sales" element={<Penjualan />} />
               <Route path="/purchases" element={<Pembelian />} />
               <Route path="/expenses" element={<Pengeluaran />} />
+              <Route path="/incomes" element={<Pemasukan />} />
               <Route path="/reports" element={<Laporan />} />
               <Route path="/products" element={<MasterProduk />} />
               <Route path="/channels" element={<MasterChannel />} />
+              <Route path="/categories" element={<MasterKategori />} />
             </Routes>
           </main>
         </div>

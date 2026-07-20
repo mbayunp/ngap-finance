@@ -22,44 +22,64 @@ exports.getProfitLoss = async (req, res) => {
             queryParamsCashbook = [startDate, endDate];
         }
 
-        // 1. Agregasi gross_revenue dan total_hpp dari tabel daily_sales
-        // Sesuaikan nama tabel 'daily_sales' jika berbeda di database Anda
-        const salesQuery = `
+        // 1. Agregasi Pendapatan, HPP, dan OPEX dari tabel cash_book
+        const query = `
             SELECT 
-                COALESCE(SUM(gross_revenue), 0) as total_pendapatan,
-                COALESCE(SUM(total_hpp), 0) as total_hpp
-            FROM daily_sales
-            ${dateFilterSales}
-        `;
-        const [salesResult] = await db.query(salesQuery, queryParamsSales);
-        
-        const pendapatan = parseFloat(salesResult[0].total_pendapatan);
-        const hpp = parseFloat(salesResult[0].total_hpp);
-        const laba_kotor = pendapatan - hpp;
-
-        // 2. Agregasi Pengeluaran (OPEX) dari tabel cash_book
-        // Mengecualikan HPP, asumsikan akun bahan baku diawali dengan '6-' (baik di ID, nama, atau kode)
-        const opexQuery = `
-            SELECT COALESCE(SUM(cb.cash_out), 0) as total_opex
+                coa.account_code, 
+                coa.account_name, 
+                COALESCE(SUM(cb.cash_in), 0) as total_in, 
+                COALESCE(SUM(cb.cash_out), 0) as total_out
             FROM cash_book cb
             JOIN chart_of_accounts coa ON cb.account_id = coa.id
-            WHERE coa.account_type = 'EXPENSE' 
-              AND (coa.account_name NOT LIKE '6-%' AND coa.id NOT LIKE '6%')
-              ${dateFilterCashbook}
+            WHERE coa.account_type = 'Operasional'
+            ${dateFilterCashbook}
+            GROUP BY coa.id, coa.account_code, coa.account_name
         `;
-        const [opexResult] = await db.query(opexQuery, queryParamsCashbook);
+        const [rows] = await db.query(query, queryParamsCashbook);
         
-        const opex = parseFloat(opexResult[0].total_opex);
-        const laba_bersih = laba_kotor - opex;
+        let pendapatan = 0;
+        let hpp = 0;
+        let opex = 0;
+        const rincianBeban = [];
+
+        rows.forEach(item => {
+            const totalIn = parseFloat(item.total_in);
+            const totalOut = parseFloat(item.total_out);
+
+            // Kode 4-xxx adalah Pendapatan Usaha
+            if (item.account_code && item.account_code.startsWith('4-')) {
+                pendapatan += totalIn;
+            }
+            
+            // Kode 5-xxx adalah HPP / Bahan Baku
+            if (item.account_code && item.account_code.startsWith('5-')) {
+                hpp += totalOut;
+            }
+            
+            // Kode 6-xxx adalah OPEX / Beban Operasional
+            if (item.account_code && item.account_code.startsWith('6-')) {
+                if (totalOut > 0) {
+                    opex += totalOut;
+                    rincianBeban.push({
+                        account_name: item.account_name,
+                        total: totalOut
+                    });
+                }
+            }
+        });
+
+        const labaKotor = pendapatan - hpp;
+        const labaBersih = labaKotor - opex;
 
         res.status(200).json({
             status: 'success',
             data: {
                 pendapatan,
                 hpp,
-                labaKotor: laba_kotor,
+                labaKotor,
                 opex,
-                labaBersih: laba_bersih
+                labaBersih,
+                rincianBeban
             }
         });
     } catch (error) {
@@ -79,30 +99,34 @@ exports.getCashFlow = async (req, res) => {
     const { startDate, endDate } = req.query;
 
     try {
-        let dateFilter = '';
+        let saldoAwal = 0;
         let queryParams = [];
 
-        if (startDate && endDate) {
-            dateFilter = 'WHERE transaction_date >= ? AND transaction_date <= ?';
-            queryParams = [startDate, endDate];
+        // 1. Hitung Saldo Awal (sebelum startDate)
+        if (startDate) {
+            const querySaldoAwal = `
+                SELECT 
+                    COALESCE(SUM(cash_in), 0) - COALESCE(SUM(cash_out), 0) as saldo_awal
+                FROM cash_book
+                WHERE transaction_date < ?
+            `;
+            const [resultSaldoAwal] = await db.query(querySaldoAwal, [startDate]);
+            saldoAwal = parseFloat(resultSaldoAwal[0].saldo_awal);
+        } else {
+            // Jika tidak ada filter tanggal, bisa dihitung dari keseluruhan jika diperlukan,
+            // atau asumsikan 0 karena semua ditarik
+            saldoAwal = 0;
         }
 
-        const query = `
-            SELECT 
-                COALESCE(SUM(cash_in), 0) as total_cash_in,
-                COALESCE(SUM(cash_out), 0) as total_cash_out
-            FROM cash_book
-            ${dateFilter}
-        `;
-        const [result] = await db.query(query, queryParams);
-        
+        // 2. Tarik transaksi rentang tanggal yang dipilih
         let dateFilterDetails = '';
         if (startDate && endDate) {
             dateFilterDetails = 'AND cb.transaction_date >= ? AND cb.transaction_date <= ?';
+            queryParams = [startDate, endDate];
         }
-        
+
         const detailsQuery = `
-            SELECT coa.account_name, coa.account_type, SUM(cb.cash_in) as total_in, SUM(cb.cash_out) as total_out 
+            SELECT coa.id as account_id, coa.account_name, coa.account_type, SUM(cb.cash_in) as total_in, SUM(cb.cash_out) as total_out 
             FROM cash_book cb 
             JOIN chart_of_accounts coa ON cb.account_id = coa.id 
             WHERE 1=1 ${dateFilterDetails}
@@ -110,17 +134,57 @@ exports.getCashFlow = async (req, res) => {
         `;
         const [details] = await db.query(detailsQuery, queryParams);
 
-        const cash_in = parseFloat(result[0].total_cash_in);
-        const cash_out = parseFloat(result[0].total_cash_out);
-        const net_cash_flow = cash_in - cash_out;
+        // 3. Kelompokkan ke 3 kategori
+        const operasional = [];
+        const investasi = [];
+        const pendanaan = [];
+
+        let totalOperasional = 0;
+        let totalInvestasi = 0;
+        let totalPendanaan = 0;
+
+        details.forEach(item => {
+            const inAmount = parseFloat(item.total_in);
+            const outAmount = parseFloat(item.total_out);
+            const netAmount = inAmount - outAmount;
+
+            const entry = {
+                account_name: item.account_name,
+                account_type: item.account_type,
+                total_in: inAmount,
+                total_out: outAmount,
+                net: netAmount
+            };
+
+            // Mengelompokkan langsung berdasarkan tipe akun di tabel chart_of_accounts
+            if (item.account_type === 'Investasi') {
+                investasi.push(entry);
+                totalInvestasi += netAmount;
+            } else if (item.account_type === 'Pendanaan') {
+                pendanaan.push(entry);
+                totalPendanaan += netAmount;
+            } else {
+                // Operasional atau sisanya
+                operasional.push(entry);
+                totalOperasional += netAmount;
+            }
+        });
+
+        const netCashFlow = totalOperasional + totalInvestasi + totalPendanaan;
+        const saldoAkhir = saldoAwal + netCashFlow;
 
         res.status(200).json({
             status: 'success',
             data: {
-                cashIn: cash_in,
-                cashOut: cash_out,
-                netCashFlow: net_cash_flow,
-                details: details
+                saldoAwal,
+                operasional,
+                investasi,
+                pendanaan,
+                totalOperasional,
+                totalInvestasi,
+                totalPendanaan,
+                netCashFlow,
+                saldoAkhir
             }
         });
     } catch (error) {
@@ -131,3 +195,4 @@ exports.getCashFlow = async (req, res) => {
         });
     }
 };
+

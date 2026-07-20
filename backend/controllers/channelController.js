@@ -11,18 +11,18 @@ exports.getAllChannels = async (req, res) => {
 };
 
 exports.createChannel = async (req, res) => {
-    const { name, commission_rate, settlement_lag_days } = req.body;
-    if (!name || commission_rate === undefined || settlement_lag_days === undefined) {
+    const { name, commission_rate, settlement_lag_days, type } = req.body;
+    if (!name || commission_rate === undefined || settlement_lag_days === undefined || !type) {
         return res.status(400).json({ status: 'error', message: 'Missing required fields' });
     }
     try {
         const [result] = await db.query(
-            'INSERT INTO channels (name, commission_rate, settlement_lag_days) VALUES (?, ?, ?)',
-            [name, commission_rate, settlement_lag_days]
+            'INSERT INTO channels (name, commission_rate, settlement_lag_days, type) VALUES (?, ?, ?, ?)',
+            [name, commission_rate, settlement_lag_days, type]
         );
         res.status(201).json({
             status: 'success',
-            data: { id: result.insertId, name, commission_rate, settlement_lag_days }
+            data: { id: result.insertId, name, commission_rate, settlement_lag_days, type }
         });
     } catch (error) {
         console.error('Error creating channel:', error);
@@ -32,14 +32,14 @@ exports.createChannel = async (req, res) => {
 
 exports.updateChannel = async (req, res) => {
     const { id } = req.params;
-    const { name, commission_rate, settlement_lag_days } = req.body;
-    if (!name || commission_rate === undefined || settlement_lag_days === undefined) {
+    const { name, commission_rate, settlement_lag_days, type } = req.body;
+    if (!name || commission_rate === undefined || settlement_lag_days === undefined || !type) {
         return res.status(400).json({ status: 'error', message: 'Missing required fields' });
     }
     try {
         const [result] = await db.query(
-            'UPDATE channels SET name = ?, commission_rate = ?, settlement_lag_days = ? WHERE id = ?',
-            [name, commission_rate, settlement_lag_days, id]
+            'UPDATE channels SET name = ?, commission_rate = ?, settlement_lag_days = ?, type = ? WHERE id = ?',
+            [name, commission_rate, settlement_lag_days, type, id]
         );
         if (result.affectedRows === 0) {
             return res.status(404).json({ status: 'error', message: 'Channel not found' });

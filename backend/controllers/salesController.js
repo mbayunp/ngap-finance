@@ -46,9 +46,9 @@ exports.createSale = async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        // 1. Ambil commission_rate dan settlement_lag_days dari tabel channels
+        // 1. Ambil commission_rate, settlement_lag_days, dan type dari tabel channels
         const [channelRows] = await connection.query(
-            'SELECT commission_rate, settlement_lag_days FROM channels WHERE id = ?', 
+            'SELECT commission_rate, settlement_lag_days, type FROM channels WHERE id = ?', 
             [channel_id]
         );
         
@@ -56,7 +56,7 @@ exports.createSale = async (req, res) => {
             throw new Error('Channel not found');
         }
         
-        const { commission_rate, settlement_lag_days } = channelRows[0];
+        const { commission_rate, settlement_lag_days, type: channelType } = channelRows[0];
         
         // 2 & 3. Hitung total secara dinamis dengan melooping items
         let gross_revenue = 0;
@@ -114,11 +114,15 @@ exports.createSale = async (req, res) => {
         trxDate.setDate(trxDate.getDate() + parseInt(settlement_lag_days));
         const settlement_date = trxDate.toISOString().split('T')[0];
 
+        // Tentukan status pencairan berdasarkan tipe channel
+        const isDirect = (channelType === 'Direct');
+        const status_pencairan = isDirect ? 'PAID' : 'PENDING';
+
         // 7. Lakukan INSERT ke daily_sales
         const insertSalesQuery = `
             INSERT INTO daily_sales 
             (transaction_date, channel_id, total_qty, gross_revenue, total_hpp, commission_amount, net_settlement, settlement_date, status_pencairan) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         const [saleResult] = await connection.query(insertSalesQuery, [
             transaction_date,
@@ -128,7 +132,8 @@ exports.createSale = async (req, res) => {
             total_hpp,
             commission_amount,
             net_settlement,
-            settlement_date
+            settlement_date,
+            status_pencairan
         ]);
         
         const dailySaleId = saleResult.insertId;
@@ -142,6 +147,39 @@ exports.createSale = async (req, res) => {
         `;
         
         await connection.query(insertItemsQuery, [itemValues]);
+
+        // Jika channel bertipe Direct, otomatis masukkan ke cash_book
+        if (isDirect) {
+            const [coaRows] = await connection.query(
+                "SELECT id FROM chart_of_accounts WHERE account_code = '4-1001'"
+            );
+
+            // Jika akun ditemukan, gunakan id tersebut, jika tidak, bisa fallback atau lempar error
+            // Asumsi akun 4-1001 pasti ada atau fallback ke akun pendapatan default 4-1000
+            let accountId = coaRows.length > 0 ? coaRows[0].id : null;
+            
+            if (!accountId) {
+                const [fallbackRows] = await connection.query(
+                    "SELECT id FROM chart_of_accounts WHERE account_code = '4-1000'"
+                );
+                if (fallbackRows.length > 0) accountId = fallbackRows[0].id;
+            }
+
+            if (accountId) {
+                await connection.query(`
+                    INSERT INTO cash_book (transaction_date, account_id, description, cash_in, cash_out)
+                    VALUES (?, ?, ?, ?, ?)
+                `, [
+                    transaction_date,
+                    accountId,
+                    `Penjualan Direct - Sale ID #${dailySaleId}`,
+                    net_settlement,
+                    0
+                ]);
+            } else {
+                console.warn('Account for Pendapatan Penjualan Direct not found. Skipped cash_book insertion.');
+            }
+        }
 
         // 9. Commit
         await connection.commit();
@@ -199,5 +237,91 @@ exports.deleteSale = async (req, res) => {
             status: 'error',
             message: 'Failed to delete sale transaction'
         });
+    }
+};
+
+// ==========================================
+// PUT /api/sales/:id/settle
+// Pencairan dana untuk transaksi (khusus tipe Platform)
+// ==========================================
+exports.settleSale = async (req, res) => {
+    const { id } = req.params;
+    const connection = await db.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // 1. Cek transaksi eksisting
+        const [salesRows] = await connection.query(
+            'SELECT * FROM daily_sales WHERE id = ? FOR UPDATE',
+            [id]
+        );
+
+        if (salesRows.length === 0) {
+            throw new Error('Transaction not found');
+        }
+
+        const sale = salesRows[0];
+
+        // Cegah pencairan ganda
+        if (sale.status_pencairan === 'PAID' || sale.status_pencairan === 'SETTLED') {
+            throw new Error('Transaction is already settled');
+        }
+
+        const net_settlement = sale.net_settlement;
+        
+        // Buat string format YYYY-MM-DD untuk current date (sebagai fallback kalau DB function tdk bisa)
+        const today = new Date().toISOString().split('T')[0];
+
+        // 2. Update status dan settlement_date di daily_sales
+        await connection.query(
+            "UPDATE daily_sales SET status_pencairan = 'PAID', settlement_date = ? WHERE id = ?",
+            [today, id]
+        );
+
+        // 3. Masukkan ke tabel cash_book
+        // Cari id dari chart_of_accounts di mana account_code = '4-1002'
+        const [coaRows] = await connection.query(
+            "SELECT id FROM chart_of_accounts WHERE account_code = '4-1002'"
+        );
+
+        let accountId = coaRows.length > 0 ? coaRows[0].id : null;
+        if (!accountId) {
+            const [fallbackRows] = await connection.query(
+                "SELECT id FROM chart_of_accounts WHERE account_code = '4-1000'"
+            );
+            if (fallbackRows.length > 0) accountId = fallbackRows[0].id;
+        }
+
+        if (accountId) {
+            await connection.query(`
+                INSERT INTO cash_book (transaction_date, account_id, description, cash_in, cash_out)
+                VALUES (?, ?, ?, ?, ?)
+            `, [
+                today, // Menggunakan tanggal pencairan sebagai tanggal transaksi kas
+                accountId,
+                `Pencairan Dana (Settlement) - Sale ID #${id}`,
+                net_settlement,
+                0
+            ]);
+        } else {
+            console.warn('Account for Pendapatan Penjualan Platform not found. Skipped cash_book insertion.');
+        }
+
+        await connection.commit();
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Settlement processed successfully'
+        });
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error settling sale:', error);
+        res.status(500).json({
+            status: 'error',
+            message: error.message || 'Failed to process settlement'
+        });
+    } finally {
+        connection.release();
     }
 };

@@ -11,4 +11,7 @@ router.post('/', salesController.createSale);
 // DELETE sale
 router.delete('/:id', salesController.deleteSale);
 
+// PUT settle sale
+router.put('/:id/settle', salesController.settleSale);
+
 module.exports = router;

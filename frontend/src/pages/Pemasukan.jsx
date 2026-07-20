@@ -4,7 +4,7 @@ import { Save, Loader2, CreditCard, Trash, Pencil } from 'lucide-react';
 import { formatInputRupiah, parseRupiahToNumber } from '../utils/formatRupiah';
 import Swal from 'sweetalert2';
 
-const Pengeluaran = () => {
+const Pemasukan = () => {
   const [formData, setFormData] = useState({
     tanggal: new Date().toISOString().split('T')[0],
     accountId: '', 
@@ -23,13 +23,12 @@ const Pengeluaran = () => {
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/coa`);
       if (res.data && res.data.status === 'success') {
-        // Filter opsional: hanya tampilkan tipe Operasional
-        const operasionalCoa = res.data.data.filter(item => item.account_type === 'Operasional');
-        setCategories(operasionalCoa);
+        // Filter opsional: hanya tampilkan tipe Investasi & Pendanaan
+        const nonOperasionalCoa = res.data.data.filter(item => item.account_type === 'Investasi' || item.account_type === 'Pendanaan');
+        setCategories(nonOperasionalCoa);
         
-        // Set default accountId jika belum ada dan data tersedia
-        if (operasionalCoa.length > 0 && !formData.accountId) {
-          setFormData(prev => ({ ...prev, accountId: operasionalCoa[0].id }));
+        if (nonOperasionalCoa.length > 0 && !formData.accountId) {
+          setFormData(prev => ({ ...prev, accountId: nonOperasionalCoa[0].id }));
         }
       }
     } catch (error) {
@@ -39,11 +38,9 @@ const Pengeluaran = () => {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/cashbook`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/incomes`);
       if (res.data && res.data.status === 'success') {
-        // Filter data pengeluaran (cash_out > 0)
-        const filteredData = res.data.data.filter(item => item.cash_out > 0);
-        setHistory(filteredData);
+        setHistory(res.data.data);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -74,16 +71,15 @@ const Pengeluaran = () => {
         transaction_date: formData.tanggal,
         account_id: parseInt(formData.accountId),
         description: formData.description,
-        cash_in: 0,
-        cash_out: nominalValue
+        cash_in: nominalValue
       };
 
       if (editingId) {
-        await axios.put(`${import.meta.env.VITE_API_URL}/api/cashbook/${editingId}`, payload);
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data pengeluaran berhasil diupdate!' });
+        await axios.put(`${import.meta.env.VITE_API_URL}/api/incomes/${editingId}`, payload);
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data pemasukan berhasil diupdate!' });
       } else {
-        await axios.post(`${import.meta.env.VITE_API_URL}/api/cashbook`, payload);
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data pengeluaran berhasil disimpan!' });
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/incomes`, payload);
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data pemasukan berhasil disimpan!' });
       }
       
       setFormData(prev => ({
@@ -96,7 +92,7 @@ const Pengeluaran = () => {
       fetchHistory();
     } catch (error) {
       console.error('Error saving data:', error);
-      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menyimpan data pengeluaran!' });
+      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menyimpan data pemasukan!' });
     } finally {
       setIsLoading(false);
     }
@@ -108,7 +104,7 @@ const Pengeluaran = () => {
       tanggal: dateStr,
       accountId: row.account_id,
       description: row.description,
-      nominal: formatInputRupiah(Math.round(Number(row.cash_out)))
+      nominal: formatInputRupiah(Math.round(Number(row.cash_in)))
     });
     setEditingId(row.id);
   };
@@ -116,7 +112,7 @@ const Pengeluaran = () => {
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: 'Apakah Anda yakin?',
-      text: "Data pengeluaran ini akan dihapus!",
+      text: "Data pemasukan ini akan dihapus!",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
@@ -126,7 +122,7 @@ const Pengeluaran = () => {
     
     if (result.isConfirmed) {
       try {
-        await axios.delete(`${import.meta.env.VITE_API_URL}/api/cashbook/${id}`);
+        await axios.delete(`${import.meta.env.VITE_API_URL}/api/incomes/${id}`);
         Swal.fire('Terhapus!', 'Data berhasil dihapus!', 'success');
         fetchHistory();
       } catch (error) {
@@ -147,12 +143,12 @@ const Pengeluaran = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Pengeluaran Operasional</h1>
-        <p className="text-gray-500 mt-1">Input transaksi pengeluaran operasional (OPEX) bulanan atau harian.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Pemasukan Lain-lain</h1>
+        <p className="text-gray-500 mt-1">Input transaksi pemasukan di luar penjualan (contoh: Setor Modal, Pinjaman).</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-5 border-b border-gray-50 pb-3">Form Input Pengeluaran</h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-5 border-b border-gray-50 pb-3">Form Input Pemasukan</h2>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -160,15 +156,15 @@ const Pengeluaran = () => {
               <input
                 type="date"
                 required
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                 value={formData.tanggal}
                 onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Kategori Pengeluaran</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Kategori Pemasukan</label>
               <select
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                 value={formData.accountId}
                 onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
               >
@@ -184,8 +180,8 @@ const Pengeluaran = () => {
               <input
                 type="text"
                 required
-                placeholder="Misal: Rp. 1.500.000"
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                placeholder="Misal: Rp. 10.000.000"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                 value={formData.nominal}
                 onChange={(e) => setFormData({ ...formData, nominal: formatInputRupiah(e.target.value) })}
               />
@@ -195,8 +191,8 @@ const Pengeluaran = () => {
               <input
                 type="text"
                 required
-                placeholder="Misal: Bayar sewa ruko bulan ini"
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                placeholder="Misal: Setoran modal awal"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
@@ -207,10 +203,10 @@ const Pengeluaran = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex items-center px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : (editingId ? <Pencil className="w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />)}
-              {isLoading ? (editingId ? 'Mengupdate...' : 'Menyimpan...') : (editingId ? 'Update Transaksi' : 'Simpan Pengeluaran')}
+              {isLoading ? (editingId ? 'Mengupdate...' : 'Menyimpan...') : (editingId ? 'Update Transaksi' : 'Simpan Pemasukan')}
             </button>
           </div>
         </form>
@@ -218,7 +214,7 @@ const Pengeluaran = () => {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
-          <h2 className="text-lg font-semibold text-gray-800">Riwayat Pengeluaran Operasional</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Riwayat Pemasukan Lain-lain</h2>
         </div>
         
         <div className="overflow-x-auto">
@@ -236,7 +232,7 @@ const Pengeluaran = () => {
               {isFetching ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-red-500" />
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-green-500" />
                     Memuat riwayat...
                   </td>
                 </tr>
@@ -244,7 +240,7 @@ const Pengeluaran = () => {
                 <tr>
                   <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
                     <CreditCard className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                    Belum ada riwayat pengeluaran.
+                    Belum ada riwayat pemasukan.
                   </td>
                 </tr>
               ) : (
@@ -255,20 +251,20 @@ const Pengeluaran = () => {
                     </td>
                     <td className="px-6 py-4 text-gray-600 font-medium">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {row.account_name || 'OPEX'}
+                        {row.account_name || 'INCOME'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       {row.description}
                     </td>
-                    <td className="px-6 py-4 text-right font-semibold text-red-600">
-                      -{formatIDR(row.cash_out)}
+                    <td className="px-6 py-4 text-right font-semibold text-green-600">
+                      +{formatIDR(row.cash_in)}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex justify-center space-x-2">
                         <button
                           onClick={() => handleEdit(row)}
-                          className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Pencil className="w-4 h-4" />
@@ -293,4 +289,4 @@ const Pengeluaran = () => {
   );
 };
 
-export default Pengeluaran;
+export default Pemasukan;

@@ -5,11 +5,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: <Home className="w-5 h-5" /> },
     { name: 'Penjualan', path: '/sales', icon: <DollarSign className="w-5 h-5" /> },
+    { name: 'Pemasukan Lain', path: '/incomes', icon: <DollarSign className="w-5 h-5" /> },
     { name: 'Pembelian', path: '/purchases', icon: <ShoppingCart className="w-5 h-5" /> },
     { name: 'Pengeluaran', path: '/expenses', icon: <CreditCard className="w-5 h-5" /> },
     { name: 'Laporan', path: '/reports', icon: <BarChart2 className="w-5 h-5" /> },
     { name: 'Master Produk', path: '/products', icon: <Package className="w-5 h-5" /> },
     { name: 'Master Channel', path: '/channels', icon: <LayoutGrid className="w-5 h-5" /> },
+    { name: 'Master Kategori', path: '/categories', icon: <LayoutGrid className="w-5 h-5" /> },
   ];
 
   return (

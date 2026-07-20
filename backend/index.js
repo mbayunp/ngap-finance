@@ -16,6 +16,8 @@ const cashbookRoutes = require('./routes/cashbookRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const productRoutes = require('./routes/productRoutes');
 const channelRoutes = require('./routes/channelRoutes');
+const incomeRoutes = require('./routes/incomeRoutes');
+const coaRoutes = require('./routes/coaRoutes');
 
 // API Endpoints
 app.use('/api/sales', salesRoutes);
@@ -24,6 +26,8 @@ app.use('/api/cashbook', cashbookRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/channels', channelRoutes);
+app.use('/api/incomes', incomeRoutes);
+app.use('/api/coa', coaRoutes);
 
 // Root Endpoint
 app.get('/', (req, res) => {
