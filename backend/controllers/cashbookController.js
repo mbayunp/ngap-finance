@@ -1,13 +1,10 @@
 const db = require('../config/db');
 
-// ==========================================
 // GET /api/cashbook
-// Mengambil riwayat transaksi dari tabel cash_book dengan join chart_of_accounts
-// ==========================================
 exports.getCashbook = async (req, res) => {
     try {
         const query = `
-            SELECT cb.*, coa.account_name, coa.account_type
+            SELECT cb.*, coa.account_name, coa.account_type, coa.account_code
             FROM cash_book cb
             LEFT JOIN chart_of_accounts coa ON cb.account_id = coa.id
             ORDER BY cb.transaction_date DESC, cb.id DESC
@@ -27,14 +24,10 @@ exports.getCashbook = async (req, res) => {
     }
 };
 
-// ==========================================
 // POST /api/cashbook
-// Membuat input transaksi cash_book baru
-// ==========================================
 exports.createCashbookEntry = async (req, res) => {
     const { transaction_date, account_id, description, cash_in, cash_out } = req.body;
 
-    // Validasi sederhana
     if (!transaction_date || !account_id) {
         return res.status(400).json({
             status: 'error',
@@ -77,10 +70,7 @@ exports.createCashbookEntry = async (req, res) => {
     }
 };
 
-// ==========================================
 // PUT /api/cashbook/:id
-// Memperbarui transaksi cash_book berdasarkan ID
-// ==========================================
 exports.updateCashbookEntry = async (req, res) => {
     const { id } = req.params;
     const { transaction_date, account_id, description, cash_in, cash_out } = req.body;
@@ -129,10 +119,7 @@ exports.updateCashbookEntry = async (req, res) => {
     }
 };
 
-// ==========================================
 // DELETE /api/cashbook/:id
-// Menghapus transaksi cash_book berdasarkan ID
-// ==========================================
 exports.deleteCashbookEntry = async (req, res) => {
     const { id } = req.params;
 

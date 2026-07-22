@@ -7,21 +7,47 @@ import Swal from 'sweetalert2';
 const Pembelian = () => {
   const [formData, setFormData] = useState({
     tanggal: new Date().toISOString().split('T')[0],
+    accountId: '',
     description: '',
     nominal: ''
   });
   
   const [history, setHistory] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [editingId, setEditingId] = useState(null);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/coa`);
+      if (res.data && res.data.status === 'success') {
+        // Filter kategori HPP / Pembelian (misal: kode 5-xxx atau Operasional / EXPENSE)
+        const purchaseCoa = res.data.data.filter(item => 
+          item.account_code?.startsWith('5') || 
+          item.account_type === 'EXPENSE' || 
+          item.account_type === 'Operasional'
+        );
+        const finalCategories = purchaseCoa.length > 0 ? purchaseCoa : res.data.data;
+        setCategories(finalCategories);
+        
+        if (finalCategories.length > 0 && !formData.accountId) {
+          setFormData(prev => ({ ...prev, accountId: finalCategories[0].id }));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
 
   const fetchHistory = async () => {
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/cashbook`);
       if (res.data && res.data.status === 'success') {
-        // Filter account_id === 4 (Pembelian Bahan Baku)
-        const filteredData = res.data.data.filter(item => item.account_id === 4);
+        // Filter transaksi kas keluar yang berhubungan dengan pembelian (account_code diawali '5' atau account_id === 4)
+        const filteredData = res.data.data.filter(item => 
+          item.cash_out > 0 && (item.account_code?.startsWith('5') || item.account_id === 4)
+        );
         setHistory(filteredData);
       }
     } catch (error) {
@@ -33,6 +59,7 @@ const Pembelian = () => {
 
   useEffect(() => {
     const initFetch = async () => {
+      await fetchCategories();
       await fetchHistory();
     };
     initFetch();
@@ -45,12 +72,16 @@ const Pembelian = () => {
       Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Nominal harus lebih besar dari 0' });
       return;
     }
+    if (!formData.accountId) {
+      Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Silakan pilih kategori pembelian' });
+      return;
+    }
 
     setIsLoading(true);
     try {
       const payload = {
         transaction_date: formData.tanggal,
-        account_id: 4,
+        account_id: parseInt(formData.accountId),
         description: formData.description,
         cash_in: 0,
         cash_out: nominalValue
@@ -84,6 +115,7 @@ const Pembelian = () => {
     const dateStr = new Date(row.transaction_date).toISOString().split('T')[0];
     setFormData({
       tanggal: dateStr,
+      accountId: row.account_id,
       description: row.description,
       nominal: formatInputRupiah(Math.round(Number(row.cash_out)))
     });
@@ -143,6 +175,22 @@ const Pembelian = () => {
               />
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Kategori Pembelian</label>
+              <select
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                value={formData.accountId}
+                onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
+              >
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.account_code ? `${c.account_code} - ${c.account_name}` : c.account_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Total Nominal (Rp)</label>
               <input
                 type="text"
@@ -153,17 +201,17 @@ const Pembelian = () => {
                 onChange={(e) => setFormData({ ...formData, nominal: formatInputRupiah(e.target.value) })}
               />
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Deskripsi Pembelian</label>
-            <input
-              type="text"
-              required
-              placeholder="Misal: Beli daging ayam 10kg, saus, dll"
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Deskripsi Pembelian</label>
+              <input
+                type="text"
+                required
+                placeholder="Misal: Beli daging ayam 10kg, saus, dll"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
           </div>
 
           <div className="flex justify-end pt-2 border-t border-gray-50">
@@ -185,10 +233,11 @@ const Pembelian = () => {
         </div>
         
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[600px]">
+          <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr className="bg-white text-gray-500 text-sm border-b border-gray-100">
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs w-48">Tanggal</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Kategori</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Deskripsi</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-right w-48">Nominal</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-center w-24">Aksi</th>
@@ -197,14 +246,14 @@ const Pembelian = () => {
             <tbody className="text-sm divide-y divide-gray-50">
               {isFetching ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-red-500" />
                     Memuat riwayat...
                   </td>
                 </tr>
               ) : history.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
                     <ShoppingCart className="w-10 h-10 mx-auto mb-2 text-gray-300" />
                     Belum ada riwayat pembelian.
                   </td>
@@ -214,6 +263,11 @@ const Pembelian = () => {
                   <tr key={row.id} className="hover:bg-gray-50/80 transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-800 whitespace-nowrap">
                       {new Date(row.transaction_date).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 font-medium">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        {row.account_name || 'Pembelian'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       {row.description}

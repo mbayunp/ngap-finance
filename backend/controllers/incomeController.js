@@ -3,10 +3,14 @@ const db = require('../config/db');
 exports.getAllIncomes = async (req, res) => {
     try {
         const query = `
-            SELECT cb.*, coa.account_name, coa.account_type 
+            SELECT cb.*, coa.account_name, coa.account_type, coa.account_code 
             FROM cash_book cb
             JOIN chart_of_accounts coa ON cb.account_id = coa.id
-            WHERE cb.cash_in > 0 AND (cb.cash_out IS NULL OR cb.cash_out = 0)
+            WHERE cb.cash_in > 0 
+              AND (cb.cash_out IS NULL OR cb.cash_out = 0)
+              AND (coa.account_code NOT IN ('4-1000', '4-1001', '4-1002', '4-2000') 
+                   AND cb.description NOT LIKE 'Pencairan Dana%' 
+                   AND cb.description NOT LIKE 'Penjualan Direct%')
             ORDER BY cb.transaction_date DESC, cb.created_at DESC
         `;
         const [rows] = await db.query(query);

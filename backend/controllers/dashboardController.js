@@ -1,19 +1,14 @@
 const db = require('../config/db');
 
-// ==========================================
 // GET /api/dashboard/summary
-// Mengembalikan metrik ringkasan cepat untuk card di halaman utama
-// ==========================================
 exports.getDashboardSummary = async (req, res) => {
     try {
-        // 1. Total Kas Saat Ini (Cash In - Cash Out)
         const [cashResult] = await db.query(`
             SELECT COALESCE(SUM(cash_in) - SUM(cash_out), 0) AS total_kas 
             FROM cash_book
         `);
         const totalKas = parseFloat(cashResult[0].total_kas);
 
-        // 2. Piutang Platform Aktif (Total Net Settlement yang masih pending)
         const [receivableResult] = await db.query(`
             SELECT COALESCE(SUM(net_settlement), 0) AS total_piutang 
             FROM daily_sales 
@@ -21,8 +16,6 @@ exports.getDashboardSummary = async (req, res) => {
         `);
         const totalPiutang = parseFloat(receivableResult[0].total_piutang);
 
-        // 3. Total Penjualan Bulan Ini (Berdasarkan bulan dan tahun berjalan)
-        // Catatan: sesuaikan nama kolom 'date' dengan skema Anda jika berbeda (misal: 'sale_date')
         const [salesResult] = await db.query(`
             SELECT COALESCE(SUM(gross_revenue), 0) AS total_penjualan_bulan_ini 
             FROM daily_sales 
@@ -218,3 +211,60 @@ exports.getRecentActivities = async (req, res) => {
         });
     }
 };
+
+// ==========================================
+// GET /api/dashboard/sales-trend
+// Mengembalikan data tren harian penjualan & kas 30 hari terakhir
+// ==========================================
+exports.getSalesTrend = async (req, res) => {
+    try {
+        const salesTrendQuery = `
+            SELECT 
+                DATE_FORMAT(transaction_date, '%Y-%m-%d') as date,
+                COALESCE(SUM(gross_revenue), 0) as gross_revenue,
+                COALESCE(SUM(net_settlement), 0) as net_settlement
+            FROM daily_sales
+            WHERE transaction_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+            GROUP BY DATE_FORMAT(transaction_date, '%Y-%m-%d')
+            ORDER BY date ASC
+        `;
+        const [salesRows] = await db.query(salesTrendQuery);
+
+        const cashTrendQuery = `
+            SELECT 
+                DATE_FORMAT(transaction_date, '%Y-%m-%d') as date,
+                COALESCE(SUM(cash_in), 0) as cash_in,
+                COALESCE(SUM(cash_out), 0) as cash_out
+            FROM cash_book
+            WHERE transaction_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+            GROUP BY DATE_FORMAT(transaction_date, '%Y-%m-%d')
+            ORDER BY date ASC
+        `;
+        const [cashRows] = await db.query(cashTrendQuery);
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                salesTrend: salesRows.map(r => ({
+                    date: r.date,
+                    gross_revenue: parseFloat(r.gross_revenue),
+                    net_settlement: parseFloat(r.net_settlement)
+                })),
+                cashTrend: cashRows.map(r => ({
+                    date: r.date,
+                    cash_in: parseFloat(r.cash_in),
+                    cash_out: parseFloat(r.cash_out)
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching sales trend:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Internal server error while fetching sales trend'
+        });
+    }
+};
+
+
+

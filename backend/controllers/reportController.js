@@ -196,3 +196,90 @@ exports.getCashFlow = async (req, res) => {
     }
 };
 
+// ==========================================
+// GET /api/reports/cash-detail
+// Mengambil Laporan Detail Mutasi Buku Kas & Saldo Berjalan
+// ==========================================
+exports.getCashDetailReport = async (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    try {
+        let saldoAwal = 0;
+        let queryParams = [];
+        let dateFilter = '';
+
+        // 1. Hitung Saldo Awal (sebelum startDate)
+        if (startDate) {
+            const querySaldoAwal = `
+                SELECT COALESCE(SUM(cash_in) - SUM(cash_out), 0) as saldo_awal
+                FROM cash_book
+                WHERE transaction_date < ?
+            `;
+            const [resultSaldoAwal] = await db.query(querySaldoAwal, [startDate]);
+            saldoAwal = parseFloat(resultSaldoAwal[0].saldo_awal) || 0;
+        }
+
+        if (startDate && endDate) {
+            dateFilter = 'WHERE cb.transaction_date >= ? AND cb.transaction_date <= ?';
+            queryParams = [startDate, endDate];
+        }
+
+        // 2. Ambil seluruh mutasi kas secara kronologis
+        const query = `
+            SELECT 
+                cb.id,
+                cb.transaction_date,
+                cb.description,
+                cb.cash_in,
+                cb.cash_out,
+                coa.account_name,
+                coa.account_code,
+                coa.account_type
+            FROM cash_book cb
+            JOIN chart_of_accounts coa ON cb.account_id = coa.id
+            ${dateFilter}
+            ORDER BY cb.transaction_date ASC, cb.id ASC
+        `;
+        const [rows] = await db.query(query, queryParams);
+
+        // 3. Hitung Saldo Berjalan baris demi baris
+        let runningBalance = saldoAwal;
+        let itemNo = 1;
+
+        const details = rows.map(r => {
+            const cashIn = parseFloat(r.cash_in) || 0;
+            const cashOut = parseFloat(r.cash_out) || 0;
+            runningBalance += (cashIn - cashOut);
+
+            return {
+                no: itemNo++,
+                id: r.id,
+                transaction_date: r.transaction_date,
+                account_name: r.account_name,
+                account_code: r.account_code,
+                description: r.description,
+                cash_in: cashIn,
+                cash_out: cashOut,
+                saldo_berjalan: runningBalance
+            };
+        });
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                saldoAwal,
+                details,
+                saldoAkhir: runningBalance,
+                totalCount: details.length
+            }
+        });
+    } catch (error) {
+        console.error('Error generating Cash Detail report:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to generate Cash Detail report'
+        });
+    }
+};
+
+

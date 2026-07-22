@@ -14,4 +14,7 @@ router.get('/bep-analysis', dashboardController.getBepAnalysis);
 // Route: /api/dashboard/recent-activities
 router.get('/recent-activities', dashboardController.getRecentActivities);
 
+// Route: /api/dashboard/sales-trend
+router.get('/sales-trend', dashboardController.getSalesTrend);
+
 module.exports = router;

@@ -23,12 +23,15 @@ const Pemasukan = () => {
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/coa`);
       if (res.data && res.data.status === 'success') {
-        // Filter opsional: hanya tampilkan tipe Investasi & Pendanaan
-        const nonOperasionalCoa = res.data.data.filter(item => item.account_type === 'Investasi' || item.account_type === 'Pendanaan');
-        setCategories(nonOperasionalCoa);
+        // Filter out sales revenue accounts (4-1000, 4-1001, 4-1002, 4-2000)
+        const nonSalesCoa = res.data.data.filter(item => 
+          !['4-1000', '4-1001', '4-1002', '4-2000'].includes(item.account_code)
+        );
+        const finalCategories = nonSalesCoa.length > 0 ? nonSalesCoa : res.data.data;
+        setCategories(finalCategories);
         
-        if (nonOperasionalCoa.length > 0 && !formData.accountId) {
-          setFormData(prev => ({ ...prev, accountId: nonOperasionalCoa[0].id }));
+        if (finalCategories.length > 0 && !formData.accountId) {
+          setFormData(prev => ({ ...prev, accountId: finalCategories[0].id }));
         }
       }
     } catch (error) {
@@ -168,8 +171,10 @@ const Pemasukan = () => {
                 value={formData.accountId}
                 onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
               >
-                {categories.filter(c => c.account_code.startsWith('4') || c.account_code.startsWith('8')).map(c => (
-                  <option key={c.id} value={c.id}>{c.account_code} - {c.account_name}</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.account_code ? `${c.account_code} - ${c.account_name}` : c.account_name}
+                  </option>
                 ))}
               </select>
             </div>

@@ -11,6 +11,7 @@ const Penjualan = () => {
   });
   const [qty, setQty] = useState({});
   const [salesHistory, setSalesHistory] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
 
@@ -57,6 +58,22 @@ const Penjualan = () => {
     }
   };
 
+  // Selection Handlers
+  const handleSelectAll = () => {
+    if (salesHistory.length === 0) return;
+    if (selectedIds.length === salesHistory.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(salesHistory.map(item => item.id));
+    }
+  };
+
+  const handleSelectRow = (id) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
   const handleSettlement = async (id) => {
     try {
       const confirm = await Swal.fire({
@@ -73,12 +90,83 @@ const Penjualan = () => {
         const res = await axios.put(`${import.meta.env.VITE_API_URL}/api/sales/${id}/settle`);
         if (res.data.status === 'success') {
           Swal.fire('Berhasil', 'Dana berhasil dicairkan dan masuk ke Buku Kas!', 'success');
+          setSelectedIds(prev => prev.filter(item => item !== id));
           fetchHistory();
         }
       }
     } catch (error) {
       console.error('Error settling sale:', error);
       Swal.fire('Gagal', 'Terjadi kesalahan saat memproses pencairan dana.', 'error');
+    }
+  };
+
+  // Bulk Handlers
+  const handleBulkSettlement = async () => {
+    if (selectedIds.length === 0) return;
+
+    const pendingItems = salesHistory.filter(
+      item => selectedIds.includes(item.id) && (item.status_pencairan === 'PENDING' || !item.status_pencairan)
+    );
+
+    if (pendingItems.length === 0) {
+      Swal.fire('Perhatian', 'Tidak ada transaksi berstatus PENDING dari item yang dipilih.', 'warning');
+      return;
+    }
+
+    try {
+      const confirm = await Swal.fire({
+        title: `Cairkan ${pendingItems.length} Dana Transaksi?`,
+        text: `Tindakan ini akan memproses pencairan untuk ${pendingItems.length} transaksi berstatus PENDING ke Buku Kas.`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#ef4444',
+        confirmButtonText: 'Ya, Cairkan Semua!'
+      });
+
+      if (confirm.isConfirmed) {
+        const res = await axios.put(`${import.meta.env.VITE_API_URL}/api/sales/bulk-settle`, {
+          ids: selectedIds
+        });
+        if (res.data.status === 'success') {
+          Swal.fire('Berhasil', `${res.data.settledCount || pendingItems.length} transaksi berhasil dicairkan!`, 'success');
+          setSelectedIds([]);
+          fetchHistory();
+        }
+      }
+    } catch (error) {
+      console.error('Error bulk settling sales:', error);
+      Swal.fire('Gagal', 'Terjadi kesalahan saat memproses pencairan masal.', 'error');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    const result = await Swal.fire({
+      title: `Hapus ${selectedIds.length} Transaksi?`,
+      text: `${selectedIds.length} transaksi penjualan yang dipilih akan dihapus secara permanen!`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, Hapus Semua!'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/sales/bulk-delete`, {
+          ids: selectedIds
+        });
+        if (res.data.status === 'success') {
+          Swal.fire('Terhapus!', `${res.data.deletedCount || selectedIds.length} transaksi berhasil dihapus!`, 'success');
+          setSelectedIds([]);
+          fetchHistory();
+        }
+      } catch (error) {
+        console.error('Error bulk deleting sales:', error);
+        Swal.fire('Gagal!', 'Gagal menghapus transaksi penjualan terpilih.', 'error');
+      }
     }
   };
 
@@ -259,14 +347,51 @@ const Penjualan = () => {
 
       {/* Bagian Bawah: Tabel Riwayat Penjualan */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-800">Riwayat Penjualan</h2>
+        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center flex-wrap gap-4">
+          <div className="flex items-center space-x-3">
+            <h2 className="text-lg font-semibold text-gray-800">Riwayat Penjualan</h2>
+            {salesHistory.length > 0 && (
+              <span className="text-xs font-medium text-gray-500 bg-gray-200/60 px-2.5 py-1 rounded-full">
+                Total {salesHistory.length}
+              </span>
+            )}
+          </div>
+
+          {selectedIds.length > 0 && (
+            <div className="flex items-center space-x-3 bg-red-50 text-red-700 px-4 py-2 rounded-lg border border-red-200 text-sm animate-fadeIn">
+              <span className="font-semibold">{selectedIds.length} transaksi dipilih</span>
+              <div className="h-4 w-px bg-red-200"></div>
+              <button
+                type="button"
+                onClick={handleBulkSettlement}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-md transition-colors shadow-sm"
+              >
+                Cairkan Dana Selected
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-medium text-xs rounded-md transition-colors shadow-sm flex items-center"
+              >
+                <Trash className="w-3.5 h-3.5 mr-1" /> Hapus Selected
+              </button>
+            </div>
+          )}
         </div>
         
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="bg-white text-gray-500 text-sm border-b border-gray-100">
+                <th className="px-4 py-4 font-medium uppercase tracking-wider text-xs text-center w-12">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500 cursor-pointer"
+                    checked={salesHistory.length > 0 && selectedIds.length === salesHistory.length}
+                    onChange={handleSelectAll}
+                    title="Pilih Semua"
+                  />
+                </th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Tanggal</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Channel</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-right">Pendapatan Kotor</th>
@@ -278,14 +403,14 @@ const Penjualan = () => {
             <tbody className="text-sm divide-y divide-gray-50">
               {isFetching ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-red-500" />
                     Memuat riwayat transaksi...
                   </td>
                 </tr>
               ) : salesHistory.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                     <div className="text-gray-400 mb-2 text-4xl">📝</div>
                     Belum ada riwayat transaksi penjualan.
                   </td>
@@ -298,9 +423,21 @@ const Penjualan = () => {
                   const net = row.net_settlement || row.total_amount || 0;
                   const status = row.status_pencairan || 'PENDING';
                   const channel = row.channel_id ? getChannelName(row.channel_id) : '-';
+                  const isSelected = selectedIds.includes(row.id);
 
                   return (
-                    <tr key={index} className="hover:bg-gray-50/80 transition-colors">
+                    <tr
+                      key={row.id || index}
+                      className={`transition-colors ${isSelected ? 'bg-red-50/50 hover:bg-red-50' : 'hover:bg-gray-50/80'}`}
+                    >
+                      <td className="px-4 py-4 text-center">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500 cursor-pointer"
+                          checked={isSelected}
+                          onChange={() => handleSelectRow(row.id)}
+                        />
+                      </td>
                       <td className="px-6 py-4 font-medium text-gray-800 whitespace-nowrap">
                         {date ? new Date(date).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
                       </td>

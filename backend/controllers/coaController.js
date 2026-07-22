@@ -48,14 +48,12 @@ exports.updateCoa = async (req, res) => {
 exports.deleteCoa = async (req, res) => {
     const { id } = req.params;
     try {
-        // Option 1: Direct delete. Note: this might fail if there are foreign key constraints from cash_book
         const query = 'DELETE FROM chart_of_accounts WHERE id = ?';
         await db.query(query, [id]);
         
         res.status(200).json({ status: 'success', message: 'Chart of Account deleted successfully' });
     } catch (error) {
         console.error('Error deleting COA:', error);
-        // If it's a foreign key error, return a friendlier message
         if (error.code === 'ER_ROW_IS_REFERENCED_2') {
             return res.status(400).json({ status: 'error', message: 'Cannot delete: Category is already used in transactions' });
         }

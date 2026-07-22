@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Loader2, TrendingUp, TrendingDown, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const Laporan = () => {
-  const [activeTab, setActiveTab] = useState('laba-rugi'); // 'laba-rugi' | 'arus-kas'
+  const [activeTab, setActiveTab] = useState('laba-rugi'); // 'laba-rugi' | 'arus-kas' | 'detail'
   
   const [currentDate, setCurrentDate] = useState(new Date());
   
@@ -17,21 +17,26 @@ const Laporan = () => {
 
   const [profitLossData, setProfitLossData] = useState(null);
   const [cashFlowData, setCashFlowData] = useState(null);
+  const [cashDetailData, setCashDetailData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchReports = async (start, end, showLoading = true) => {
     if (showLoading) setIsLoading(true);
     try {
-      const [plRes, cfRes] = await Promise.all([
+      const [plRes, cfRes, cdRes] = await Promise.all([
         axios.get(`${import.meta.env.VITE_API_URL}/api/reports/profit-loss?startDate=${start}&endDate=${end}`),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/reports/cash-flow?startDate=${start}&endDate=${end}`)
+        axios.get(`${import.meta.env.VITE_API_URL}/api/reports/cash-flow?startDate=${start}&endDate=${end}`),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/reports/cash-detail?startDate=${start}&endDate=${end}`)
       ]);
       
-      if (plRes.data.status === 'success') {
+      if (plRes.data && plRes.data.status === 'success') {
         setProfitLossData(plRes.data.data);
       }
-      if (cfRes.data.status === 'success') {
+      if (cfRes.data && cfRes.data.status === 'success') {
         setCashFlowData(cfRes.data.data);
+      }
+      if (cdRes.data && cdRes.data.status === 'success') {
+        setCashDetailData(cdRes.data.data);
       }
     } catch (error) {
       console.error('Error fetching reports:', error);
@@ -222,6 +227,89 @@ const Laporan = () => {
     );
   };
 
+  {/* RENDER DESAIN DENGAN HEADER HIJAU PEKAT & SALDO BERJALAN MATCHING FOTO */}
+  const renderDetailBukuKas = () => {
+    if (!cashDetailData) return null;
+    const { saldoAwal, details } = cashDetailData;
+
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center flex-wrap gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-gray-800 flex items-center">
+              <BookOpen className="w-5 h-5 mr-2 text-emerald-600" />
+              Detail Mutasi Buku Kas & Saldo Berjalan
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">Periode: {startStr} s/d {endStr}</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[900px]">
+            <thead>
+              <tr className="bg-emerald-700 text-white text-xs uppercase tracking-wider font-bold border-b border-emerald-800">
+                <th className="px-4 py-3.5 text-center w-14 border-r border-emerald-600">No</th>
+                <th className="px-4 py-3.5 w-28 border-r border-emerald-600">Tanggal</th>
+                <th className="px-5 py-3.5 w-52 border-r border-emerald-600">Kategori Akun</th>
+                <th className="px-5 py-3.5 border-r border-emerald-600">Keterangan</th>
+                <th className="px-5 py-3.5 text-right w-40 border-r border-emerald-600">Kas Masuk (Rp)</th>
+                <th className="px-5 py-3.5 text-right w-40 border-r border-emerald-600">Kas Keluar (Rp)</th>
+                <th className="px-5 py-3.5 text-right w-44">Saldo Berjalan (Rp)</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm divide-y divide-gray-200">
+              {/* Baris Saldo Awal */}
+              <tr className="bg-emerald-50/60 font-semibold text-gray-800 border-b border-emerald-100">
+                <td className="px-4 py-3 text-center text-gray-500">-</td>
+                <td className="px-4 py-3 font-mono text-xs">
+                  {new Date(startStr).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                </td>
+                <td className="px-5 py-3 font-bold text-emerald-900">Saldo Awal Kas</td>
+                <td className="px-5 py-3 text-gray-600 italic">Modal kas awal periode simulasi</td>
+                <td className="px-5 py-3 text-right font-bold text-emerald-700">{formatIDR(saldoAwal)}</td>
+                <td className="px-5 py-3 text-right text-gray-400">Rp0</td>
+                <td className="px-5 py-3 text-right font-extrabold text-gray-900">{formatIDR(saldoAwal)}</td>
+              </tr>
+
+              {/* Baris Transaksi Kronologis */}
+              {details && details.length > 0 ? (
+                details.map((item, idx) => (
+                  <tr key={item.id || idx} className="hover:bg-gray-50/90 transition-colors border-b border-gray-100">
+                    <td className="px-4 py-3 text-center text-gray-500 font-mono text-xs">{item.no}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
+                      {new Date(item.transaction_date).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    </td>
+                    <td className="px-5 py-3 font-semibold text-gray-800">
+                      {item.account_name}
+                    </td>
+                    <td className="px-5 py-3 text-gray-600 text-xs sm:text-sm">
+                      {item.description}
+                    </td>
+                    <td className="px-5 py-3 text-right font-semibold text-emerald-600 whitespace-nowrap">
+                      {item.cash_in > 0 ? formatIDR(item.cash_in) : 'Rp0'}
+                    </td>
+                    <td className="px-5 py-3 text-right font-semibold text-blue-600 whitespace-nowrap">
+                      {item.cash_out > 0 ? formatIDR(item.cash_out) : 'Rp0'}
+                    </td>
+                    <td className="px-5 py-3 text-right font-extrabold text-gray-900 whitespace-nowrap">
+                      {formatIDR(item.saldo_berjalan)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                    Belum ada riwayat mutasi transaksi pada periode ini.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -253,12 +341,12 @@ const Laporan = () => {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex space-x-2 border-b border-gray-200">
+      <div className="flex space-x-2 border-b border-gray-200 flex-wrap">
         <button
           onClick={() => setActiveTab('laba-rugi')}
           className={`px-6 py-3 font-medium text-sm transition-colors relative ${
             activeTab === 'laba-rugi' 
-              ? 'text-red-600' 
+              ? 'text-red-600 font-bold' 
               : 'text-gray-500 hover:text-gray-800'
           }`}
         >
@@ -271,13 +359,26 @@ const Laporan = () => {
           onClick={() => setActiveTab('arus-kas')}
           className={`px-6 py-3 font-medium text-sm transition-colors relative ${
             activeTab === 'arus-kas' 
-              ? 'text-red-600' 
+              ? 'text-red-600 font-bold' 
               : 'text-gray-500 hover:text-gray-800'
           }`}
         >
           Arus Kas (Cash Flow)
           {activeTab === 'arus-kas' && (
             <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600"></div>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('detail')}
+          className={`px-6 py-3 font-medium text-sm transition-colors relative ${
+            activeTab === 'detail' 
+              ? 'text-emerald-700 font-bold' 
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          Detail Buku Kas (Mutasi Transaksi)
+          {activeTab === 'detail' && (
+            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-700"></div>
           )}
         </button>
       </div>
@@ -291,7 +392,9 @@ const Laporan = () => {
           </div>
         ) : (
           <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {activeTab === 'laba-rugi' ? renderLabaRugi() : renderArusKas()}
+            {activeTab === 'laba-rugi' && renderLabaRugi()}
+            {activeTab === 'arus-kas' && renderArusKas()}
+            {activeTab === 'detail' && renderDetailBukuKas()}
           </div>
         )}
       </div>

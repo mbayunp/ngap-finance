@@ -8,6 +8,10 @@ router.get('/', salesController.getSales);
 // POST create new sale
 router.post('/', salesController.createSale);
 
+// Bulk endpoints
+router.put('/bulk-settle', salesController.bulkSettleSales);
+router.post('/bulk-delete', salesController.bulkDeleteSales);
+
 // DELETE sale
 router.delete('/:id', salesController.deleteSale);
 
