@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Save, Loader2, Trash, Edit2, Package } from 'lucide-react';
+import { Save, Loader2, Trash, Edit2 } from 'lucide-react';
 import { formatInputRupiah, parseRupiahToNumber } from '../utils/formatRupiah';
 import Swal from 'sweetalert2';
 
@@ -31,7 +31,10 @@ const MasterProduk = () => {
   };
 
   useEffect(() => {
-    fetchProducts();
+    const initFetch = async () => {
+      await fetchProducts();
+    };
+    initFetch();
   }, []);
 
   const handleEdit = (product) => {
@@ -61,35 +64,17 @@ const MasterProduk = () => {
 
       if (editingId) {
         await axios.put(`${import.meta.env.VITE_API_URL}/api/products/${editingId}`, payload);
-        Swal.fire({ 
-          icon: 'success', 
-          title: 'Berhasil', 
-          text: 'Produk berhasil diupdate!',
-          background: '#0f172a',
-          color: '#f8fafc'
-        });
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Produk berhasil diupdate!' });
       } else {
         await axios.post(`${import.meta.env.VITE_API_URL}/api/products`, payload);
-        Swal.fire({ 
-          icon: 'success', 
-          title: 'Berhasil', 
-          text: 'Produk berhasil ditambahkan!',
-          background: '#0f172a',
-          color: '#f8fafc'
-        });
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Produk berhasil ditambahkan!' });
       }
       
       handleCancel();
       fetchProducts();
     } catch (error) {
       console.error('Error saving product:', error);
-      Swal.fire({ 
-        icon: 'error', 
-        title: 'Gagal', 
-        text: 'Gagal menyimpan produk.',
-        background: '#0f172a',
-        color: '#f8fafc'
-      });
+      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menyimpan produk.' });
     } finally {
       setIsLoading(false);
     }
@@ -101,89 +86,74 @@ const MasterProduk = () => {
       text: "Produk ini akan dihapus!",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#3b82f6',
-      confirmButtonText: 'Ya, hapus!',
-      background: '#0f172a',
-      color: '#f8fafc'
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!'
     });
     
     if (result.isConfirmed) {
       try {
         await axios.delete(`${import.meta.env.VITE_API_URL}/api/products/${id}`);
-        Swal.fire({ 
-          title: 'Terhapus!', 
-          text: 'Produk berhasil dihapus!', 
-          icon: 'success',
-          background: '#0f172a',
-          color: '#f8fafc'
-        });
+        Swal.fire('Terhapus!', 'Produk berhasil dihapus!', 'success');
         fetchProducts();
       } catch (error) {
         console.error('Error deleting product:', error);
-        Swal.fire({ 
-          title: 'Gagal!', 
-          text: 'Gagal menghapus produk. Mungkin produk ini sedang digunakan dalam transaksi.', 
-          icon: 'error',
-          background: '#0f172a',
-          color: '#f8fafc'
-        });
+        Swal.fire('Gagal!', 'Gagal menghapus produk. Mungkin produk ini sedang digunakan dalam transaksi.', 'error');
       }
     }
   };
 
+  // Format Rupiah
   const formatIDR = (value) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
-    }).format(value || 0);
+    }).format(value);
   };
 
   return (
-    <div className="space-y-8 animate-fade-in-scale">
-      <div className="bg-slate-900/60 p-6 rounded-2xl border border-slate-800/80 backdrop-blur-md">
-        <h1 className="text-2xl font-extrabold text-white tracking-tight">Master Data Produk</h1>
-        <p className="text-xs text-slate-400 mt-1">Kelola katalog produk usaha, penetapan harga jual, dan HPP standar per item.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Master Data Produk</h1>
+        <p className="text-gray-500 mt-1">Kelola daftar produk, harga, dan HPP default.</p>
       </div>
 
-      {/* Form Input Produk */}
-      <div className="bg-slate-900/80 rounded-2xl border border-slate-800/80 p-6 space-y-6 shadow-2xl backdrop-blur-md">
-        <h2 className="text-base font-bold text-white border-b border-slate-800 pb-4 flex items-center">
-          <Package className="w-5 h-5 text-rose-500 mr-2" />
+      {/* Form Input */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 className="text-lg font-semibold text-gray-800 mb-5 border-b border-gray-50 pb-3">
           {editingId ? 'Edit Produk' : 'Tambah Produk Baru'}
         </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">Nama Produk</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Nama Produk</label>
               <input
                 type="text"
                 required
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-100 text-xs font-medium outline-none transition-all"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Contoh: Original"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">Harga Jual (Rp)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Harga Jual</label>
               <input
                 type="text"
                 required
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-100 text-xs font-mono font-medium outline-none transition-all"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: formatInputRupiah(e.target.value) })}
                 placeholder="Rp. 0"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">HPP Default (Rp)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">HPP Default</label>
               <input
                 type="text"
                 required
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-100 text-xs font-mono font-medium outline-none transition-all"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
                 value={formData.default_hpp}
                 onChange={(e) => setFormData({ ...formData, default_hpp: formatInputRupiah(e.target.value) })}
                 placeholder="Rp. 0"
@@ -191,12 +161,12 @@ const MasterProduk = () => {
             </div>
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-slate-800 space-x-3">
+          <div className="flex justify-end pt-4 border-t border-gray-50 space-x-3">
             {editingId && (
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition-colors cursor-pointer"
+                className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
               >
                 Batal
               </button>
@@ -204,74 +174,73 @@ const MasterProduk = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center px-6 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-900/30 transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex items-center px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
               ) : (
-                <Save className="w-4 h-4 mr-2" />
+                <Save className="w-5 h-5 mr-2" />
               )}
-              {isLoading ? 'Menyimpan...' : (editingId ? 'Update Produk' : 'Simpan Produk Baru')}
+              {isLoading ? 'Menyimpan...' : (editingId ? 'Update Produk' : 'Simpan Produk')}
             </button>
           </div>
         </form>
       </div>
 
-      {/* Tabel Produk */}
-      <div className="bg-slate-900/80 rounded-2xl border border-slate-800/80 overflow-hidden shadow-2xl backdrop-blur-md">
-        <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/40">
-          <h2 className="text-base font-bold text-white">Daftar Produk</h2>
+      {/* Tabel */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-gray-800">Daftar Produk</h2>
         </div>
         
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-950/60 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-800">
-                <th className="px-6 py-3.5 w-20">ID</th>
-                <th className="px-6 py-3.5">Nama Produk</th>
-                <th className="px-6 py-3.5 text-right">Harga Jual</th>
-                <th className="px-6 py-3.5 text-right">HPP Default</th>
-                <th className="px-6 py-3.5 text-center w-28">Aksi</th>
+              <tr className="bg-white text-gray-500 text-sm border-b border-gray-100">
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">ID</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Nama Produk</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-right">Harga Jual</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-right">HPP Default</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-center">Aksi</th>
               </tr>
             </thead>
-            <tbody className="text-xs divide-y divide-slate-800/60">
+            <tbody className="text-sm divide-y divide-gray-50">
               {isFetching ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-rose-500" />
-                    Memuat data produk...
+                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-red-500" />
+                    Memuat data...
                   </td>
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                    <div className="text-gray-400 mb-2 text-4xl">📦</div>
                     Belum ada data produk.
                   </td>
                 </tr>
               ) : (
                 products.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="px-6 py-4 text-slate-500 font-mono">#{row.id}</td>
-                    <td className="px-6 py-4 font-bold text-slate-200">{row.name}</td>
-                    <td className="px-6 py-4 text-right font-extrabold text-emerald-400 font-mono">{formatIDR(row.price)}</td>
-                    <td className="px-6 py-4 text-right font-semibold text-slate-300 font-mono">{formatIDR(row.default_hpp)}</td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex justify-center space-x-2">
-                        <button
-                          onClick={() => handleEdit(row)}
-                          className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors cursor-pointer"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(row.id)}
-                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
-                          title="Hapus"
-                        >
-                          <Trash className="w-4 h-4" />
-                        </button>
-                      </div>
+                  <tr key={row.id} className="hover:bg-gray-50/80 transition-colors">
+                    <td className="px-6 py-4 text-gray-600">{row.id}</td>
+                    <td className="px-6 py-4 font-medium text-gray-800">{row.name}</td>
+                    <td className="px-6 py-4 text-right text-gray-600">{formatIDR(row.price)}</td>
+                    <td className="px-6 py-4 text-right text-gray-600">{formatIDR(row.default_hpp)}</td>
+                    <td className="px-6 py-4 flex justify-center space-x-2">
+                      <button
+                        onClick={() => handleEdit(row)}
+                        className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(row.id)}
+                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Hapus"
+                      >
+                        <Trash className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))

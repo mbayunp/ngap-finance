@@ -22,6 +22,7 @@ const Pembelian = () => {
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/coa`);
       if (res.data && res.data.status === 'success') {
+        // Filter kategori HPP / Pembelian (misal: kode 5-xxx atau Operasional / EXPENSE)
         const purchaseCoa = res.data.data.filter(item => 
           item.account_code?.startsWith('5') || 
           item.account_type === 'EXPENSE' || 
@@ -43,6 +44,7 @@ const Pembelian = () => {
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/cashbook`);
       if (res.data && res.data.status === 'success') {
+        // Filter transaksi kas keluar yang berhubungan dengan pembelian (account_code diawali '5' atau account_id === 4)
         const filteredData = res.data.data.filter(item => 
           item.cash_out > 0 && (item.account_code?.startsWith('5') || item.account_id === 4)
         );
@@ -67,23 +69,11 @@ const Pembelian = () => {
     e.preventDefault();
     const nominalValue = parseRupiahToNumber(formData.nominal);
     if (!formData.nominal || nominalValue <= 0) {
-      Swal.fire({ 
-        icon: 'warning', 
-        title: 'Perhatian', 
-        text: 'Nominal harus lebih besar dari 0',
-        background: '#0f172a',
-        color: '#f8fafc'
-      });
+      Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Nominal harus lebih besar dari 0' });
       return;
     }
     if (!formData.accountId) {
-      Swal.fire({ 
-        icon: 'warning', 
-        title: 'Perhatian', 
-        text: 'Silakan pilih kategori pembelian',
-        background: '#0f172a',
-        color: '#f8fafc'
-      });
+      Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Silakan pilih kategori pembelian' });
       return;
     }
 
@@ -91,7 +81,7 @@ const Pembelian = () => {
     try {
       const payload = {
         transaction_date: formData.tanggal,
-        account_id: parseInt(formData.accountId, 10),
+        account_id: parseInt(formData.accountId),
         description: formData.description,
         cash_in: 0,
         cash_out: nominalValue
@@ -99,22 +89,10 @@ const Pembelian = () => {
 
       if (editingId) {
         await axios.put(`${import.meta.env.VITE_API_URL}/api/cashbook/${editingId}`, payload);
-        Swal.fire({ 
-          icon: 'success', 
-          title: 'Berhasil', 
-          text: 'Data pembelian berhasil diupdate!',
-          background: '#0f172a',
-          color: '#f8fafc'
-        });
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data pembelian berhasil diupdate!' });
       } else {
         await axios.post(`${import.meta.env.VITE_API_URL}/api/cashbook`, payload);
-        Swal.fire({ 
-          icon: 'success', 
-          title: 'Berhasil', 
-          text: 'Data pembelian berhasil disimpan!',
-          background: '#0f172a',
-          color: '#f8fafc'
-        });
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Data pembelian berhasil disimpan!' });
       }
       
       setFormData(prev => ({
@@ -127,13 +105,7 @@ const Pembelian = () => {
       fetchHistory();
     } catch (error) {
       console.error('Error saving data:', error);
-      Swal.fire({ 
-        icon: 'error', 
-        title: 'Gagal', 
-        text: 'Gagal menyimpan data pembelian!',
-        background: '#0f172a',
-        color: '#f8fafc'
-      });
+      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menyimpan data pembelian!' });
     } finally {
       setIsLoading(false);
     }
@@ -156,33 +128,19 @@ const Pembelian = () => {
       text: "Transaksi pembelian ini akan dihapus!",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#3b82f6',
-      confirmButtonText: 'Ya, hapus!',
-      background: '#0f172a',
-      color: '#f8fafc'
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!'
     });
     
     if (result.isConfirmed) {
       try {
         await axios.delete(`${import.meta.env.VITE_API_URL}/api/cashbook/${id}`);
-        Swal.fire({ 
-          title: 'Terhapus!', 
-          text: 'Data berhasil dihapus!', 
-          icon: 'success',
-          background: '#0f172a',
-          color: '#f8fafc'
-        });
+        Swal.fire('Terhapus!', 'Data berhasil dihapus!', 'success');
         fetchHistory();
       } catch (error) {
         console.error('Error deleting data:', error);
-        Swal.fire({ 
-          title: 'Gagal!', 
-          text: 'Gagal menghapus data.', 
-          icon: 'error',
-          background: '#0f172a',
-          color: '#f8fafc'
-        });
+        Swal.fire('Gagal!', 'Gagal menghapus data.', 'error');
       }
     }
   };
@@ -192,39 +150,34 @@ const Pembelian = () => {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
-    }).format(value || 0);
+    }).format(value);
   };
 
   return (
-    <div className="space-y-8 animate-fade-in-scale">
-      <div className="bg-slate-900/60 p-6 rounded-2xl border border-slate-800/80 backdrop-blur-md">
-        <h1 className="text-2xl font-extrabold text-white tracking-tight">Pembelian Bahan Baku</h1>
-        <p className="text-xs text-slate-400 mt-1">Input transaksi pembelian bahan baku, kemasan, & persediaan usaha.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Pembelian Bahan Baku</h1>
+        <p className="text-gray-500 mt-1">Input transaksi pembelian bahan baku & kemasan.</p>
       </div>
 
-      {/* Form Input Pembelian */}
-      <div className="bg-slate-900/80 rounded-2xl border border-slate-800/80 p-6 space-y-6 shadow-2xl backdrop-blur-md">
-        <h2 className="text-base font-bold text-white border-b border-slate-800 pb-4 flex items-center">
-          <ShoppingCart className="w-5 h-5 text-rose-500 mr-2" />
-          {editingId ? 'Edit Transaksi Pembelian' : 'Form Input Pembelian'}
-        </h2>
-
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 className="text-lg font-semibold text-gray-800 mb-5 border-b border-gray-50 pb-3">Form Input Pembelian</h2>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">Tanggal Transaksi</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Tanggal Transaksi</label>
               <input
                 type="date"
                 required
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-100 text-xs font-medium outline-none transition-all"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
                 value={formData.tanggal}
                 onChange={(e) => setFormData({ ...formData, tanggal: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">Kategori Pembelian</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Kategori Pembelian</label>
               <select
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-100 text-xs font-medium outline-none transition-all cursor-pointer"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
                 value={formData.accountId}
                 onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
               >
@@ -236,117 +189,104 @@ const Pembelian = () => {
               </select>
             </div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">Total Nominal (Rp)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Total Nominal (Rp)</label>
               <input
                 type="text"
                 required
                 placeholder="Misal: Rp. 500.000"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-100 text-xs font-mono font-medium outline-none transition-all"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
                 value={formData.nominal}
                 onChange={(e) => setFormData({ ...formData, nominal: formatInputRupiah(e.target.value) })}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">Deskripsi Pembelian</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Deskripsi Pembelian</label>
               <input
                 type="text"
                 required
                 placeholder="Misal: Beli daging ayam 10kg, saus, dll"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-100 text-xs font-medium outline-none transition-all"
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
             </div>
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-slate-800 space-x-3">
-            {editingId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingId(null);
-                  setFormData(prev => ({ ...prev, description: '', nominal: '' }));
-                }}
-                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition-colors cursor-pointer"
-              >
-                Batal
-              </button>
-            )}
+          <div className="flex justify-end pt-2 border-t border-gray-50">
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center px-6 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-900/30 transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex items-center px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : (editingId ? <Pencil className="w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />)}
+              {isLoading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : (editingId ? <Pencil className="w-5 h-5 mr-2" /> : <Save className="w-5 h-5 mr-2" />)}
               {isLoading ? (editingId ? 'Mengupdate...' : 'Menyimpan...') : (editingId ? 'Update Transaksi' : 'Simpan Pembelian')}
             </button>
           </div>
         </form>
       </div>
 
-      {/* Tabel Riwayat Pembelian */}
-      <div className="bg-slate-900/80 rounded-2xl border border-slate-800/80 overflow-hidden shadow-2xl backdrop-blur-md">
-        <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/40">
-          <h2 className="text-base font-bold text-white">Riwayat Transaksi Pembelian</h2>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+          <h2 className="text-lg font-semibold text-gray-800">Riwayat Pembelian</h2>
         </div>
         
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
-              <tr className="bg-slate-950/60 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-800">
-                <th className="px-6 py-3.5 w-48">Tanggal</th>
-                <th className="px-6 py-3.5">Kategori</th>
-                <th className="px-6 py-3.5">Deskripsi</th>
-                <th className="px-6 py-3.5 text-right w-48">Nominal</th>
-                <th className="px-6 py-3.5 text-center w-28">Aksi</th>
+              <tr className="bg-white text-gray-500 text-sm border-b border-gray-100">
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs w-48">Tanggal</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Kategori</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Deskripsi</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-right w-48">Nominal</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-center w-24">Aksi</th>
               </tr>
             </thead>
-            <tbody className="text-xs divide-y divide-slate-800/60">
+            <tbody className="text-sm divide-y divide-gray-50">
               {isFetching ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-rose-500" />
+                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-red-500" />
                     Memuat riwayat...
                   </td>
                 </tr>
               ) : history.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                    <ShoppingCart className="w-10 h-10 mx-auto mb-2 text-gray-300" />
                     Belum ada riwayat pembelian.
                   </td>
                 </tr>
               ) : (
                 history.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="px-6 py-4 font-semibold text-slate-200 whitespace-nowrap">
+                  <tr key={row.id} className="hover:bg-gray-50/80 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-800 whitespace-nowrap">
                       {new Date(row.transaction_date).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </td>
-                    <td className="px-6 py-4 text-slate-300 font-medium">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                    <td className="px-6 py-4 text-gray-600 font-medium">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                         {row.account_name || 'Pembelian'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-slate-400">
+                    <td className="px-6 py-4 text-gray-600">
                       {row.description}
                     </td>
-                    <td className="px-6 py-4 text-right font-extrabold text-rose-400 font-mono">
+                    <td className="px-6 py-4 text-right font-semibold text-red-600">
                       -{formatIDR(row.cash_out)}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex justify-center space-x-2">
                         <button
                           onClick={() => handleEdit(row)}
-                          className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(row.id)}
-                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                           title="Hapus"
                         >
                           <Trash className="w-4 h-4" />
