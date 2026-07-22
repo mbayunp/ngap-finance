@@ -47,10 +47,7 @@ const Laporan = () => {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchReports(startStr, endStr, true);
-    }, 0);
-    return () => clearTimeout(timer);
+    fetchReports(startStr, endStr, true);
   }, [startStr, endStr]);
 
   const monthYearString = currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
@@ -76,57 +73,63 @@ const Laporan = () => {
     const { pendapatan, hpp, labaKotor, opex, labaBersih, rincianBeban } = profitLossData;
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:p-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-6 text-center border-b border-gray-100 pb-4">
-          Laporan Laba Rugi
-          <p className="text-sm font-normal text-gray-500 mt-1">Periode: {startStr} s/d {endStr}</p>
-        </h2>
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 lg:p-8 shadow-xs space-y-6">
+        <div className="text-center border-b border-slate-100 pb-5">
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight uppercase">
+            Laporan Laba Rugi (Profit & Loss Statement)
+          </h2>
+          <p className="text-xs font-medium text-slate-500 mt-1">Periode: {startStr} s/d {endStr}</p>
+        </div>
         
         <div className="max-w-4xl mx-auto">
-          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+          <div className="overflow-hidden rounded-xl border border-slate-200 shadow-2xs">
             <table className="w-full text-left border-collapse">
-              <tbody className="text-sm divide-y divide-gray-100">
+              <tbody className="text-xs divide-y divide-slate-100">
                 
-                <tr className="bg-gray-50/80">
-                  <td colSpan="2" className="px-6 py-3 font-bold text-gray-800">PENDAPATAN & BEBAN POKOK</td>
+                <tr className="bg-slate-50">
+                  <td colSpan="2" className="px-6 py-3.5 font-extrabold text-slate-800 uppercase tracking-wider text-[11px]">
+                    1. PENDAPATAN & BEBAN POKOK PENJUALAN
+                  </td>
                 </tr>
-                <tr className="hover:bg-gray-50/50">
-                  <td className="px-6 py-3 pl-10 text-gray-700 font-medium">Pendapatan Usaha</td>
-                  <td className="px-6 py-3 text-right font-medium text-gray-900">{formatIDR(pendapatan)}</td>
+                <tr className="hover:bg-slate-50/50">
+                  <td className="px-6 py-3 pl-10 text-slate-700 font-medium">Pendapatan Usaha (Gross Sales)</td>
+                  <td className="px-6 py-3 text-right font-bold text-slate-900 font-mono">{formatIDR(pendapatan)}</td>
                 </tr>
-                <tr className="hover:bg-gray-50/50">
-                  <td className="px-6 py-3 pl-10 text-gray-700 font-medium">Harga Pokok Penjualan (HPP)</td>
-                  <td className="px-6 py-3 text-right font-medium text-red-600">({formatIDR(hpp)})</td>
+                <tr className="hover:bg-slate-50/50">
+                  <td className="px-6 py-3 pl-10 text-slate-700 font-medium">Harga Pokok Penjualan (HPP)</td>
+                  <td className="px-6 py-3 text-right font-bold text-rose-600 font-mono">({formatIDR(hpp)})</td>
                 </tr>
-                <tr className="bg-gray-50 border-t-2 border-gray-200">
-                  <td className="px-6 py-4 font-bold text-gray-800 uppercase">Laba Kotor</td>
-                  <td className="px-6 py-4 text-right font-bold text-gray-900">{formatIDR(labaKotor)}</td>
+                <tr className="bg-slate-100/80 border-t-2 border-slate-200">
+                  <td className="px-6 py-4 font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">LABA KOTOR (GROSS PROFIT)</td>
+                  <td className="px-6 py-4 text-right font-black text-slate-900 font-mono text-sm">{formatIDR(labaKotor)}</td>
                 </tr>
 
-                <tr className="bg-gray-50/80 mt-4 border-t-4 border-white">
-                  <td colSpan="2" className="px-6 py-3 font-bold text-gray-800">BEBAN OPERASIONAL</td>
+                <tr className="bg-slate-50 border-t-4 border-white">
+                  <td colSpan="2" className="px-6 py-3.5 font-extrabold text-slate-800 uppercase tracking-wider text-[11px]">
+                    2. BEBAN OPERASIONAL (OPEX)
+                  </td>
                 </tr>
                 {rincianBeban && rincianBeban.length > 0 ? (
                   rincianBeban.map((beban, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50/50">
-                      <td className="px-6 py-2 pl-10 text-gray-700">{beban.account_name}</td>
-                      <td className="px-6 py-2 text-right font-medium text-gray-800">{formatIDR(beban.total)}</td>
+                    <tr key={idx} className="hover:bg-slate-50/50">
+                      <td className="px-6 py-2.5 pl-10 text-slate-700">{beban.account_name}</td>
+                      <td className="px-6 py-2.5 text-right font-medium text-slate-800 font-mono">{formatIDR(beban.total)}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td className="px-6 py-2 pl-10 text-gray-400 italic">Tidak ada rincian beban</td>
-                    <td className="px-6 py-2 text-right text-gray-400">-</td>
+                    <td className="px-6 py-2.5 pl-10 text-slate-400 italic">Tidak ada rincian beban operasional</td>
+                    <td className="px-6 py-2.5 text-right text-slate-400">-</td>
                   </tr>
                 )}
-                <tr className="border-b-2 border-gray-200">
-                  <td className="px-6 py-3 pl-10 font-semibold text-gray-700 text-right">Total Beban Operasional</td>
-                  <td className="px-6 py-3 text-right font-bold text-red-600">({formatIDR(opex)})</td>
+                <tr className="border-b-2 border-slate-200">
+                  <td className="px-6 py-3 pl-10 font-bold text-slate-700 text-right">Total Beban Operasional</td>
+                  <td className="px-6 py-3 text-right font-bold text-rose-600 font-mono">({formatIDR(opex)})</td>
                 </tr>
 
-                <tr className={`border-t border-gray-300 ${labaBersih >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-                  <td className="px-6 py-5 font-bold text-xl text-gray-900 uppercase">LABA BERSIH</td>
-                  <td className={`px-6 py-5 text-right font-bold text-2xl ${labaBersih >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                <tr className={`border-t-2 border-slate-300 ${labaBersih >= 0 ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+                  <td className="px-6 py-5 font-black text-sm text-slate-900 uppercase tracking-wider">LABA BERSIH (NET INCOME)</td>
+                  <td className={`px-6 py-5 text-right font-black text-xl font-mono ${labaBersih >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                     {formatIDR(labaBersih)}
                   </td>
                 </tr>
@@ -155,68 +158,62 @@ const Laporan = () => {
 
     const renderTableGroup = (title, data, subtotal, isLast = false) => (
       <>
-        <tr className="bg-gray-50/80">
-          <td colSpan="2" className="px-6 py-3 font-bold text-gray-800">{title}</td>
+        <tr className="bg-slate-50">
+          <td colSpan="2" className="px-6 py-3.5 font-extrabold text-slate-800 uppercase tracking-wider text-[11px]">{title}</td>
         </tr>
         {data && data.length > 0 ? (
           data.map((item, idx) => (
-            <tr key={idx} className="hover:bg-gray-50/50">
-              <td className="px-6 py-2 pl-10 text-gray-700">{item.account_name}</td>
-              <td className="px-6 py-2 text-right font-medium text-gray-800">{formatIDR(item.net)}</td>
+            <tr key={idx} className="hover:bg-slate-50/50">
+              <td className="px-6 py-2.5 pl-10 text-slate-700">{item.account_name}</td>
+              <td className="px-6 py-2.5 text-right font-medium text-slate-800 font-mono">{formatIDR(item.net)}</td>
             </tr>
           ))
         ) : (
           <tr>
-            <td className="px-6 py-2 pl-10 text-gray-400 italic">Tidak ada transaksi</td>
-            <td className="px-6 py-2 text-right text-gray-400">-</td>
+            <td className="px-6 py-2.5 pl-10 text-slate-400 italic">Tidak ada transaksi</td>
+            <td className="px-6 py-2.5 text-right text-slate-400">-</td>
           </tr>
         )}
-        <tr className={!isLast ? "border-b border-gray-200" : ""}>
-          <td className="px-6 py-3 font-semibold text-gray-700 pl-10 text-right">Jumlah Kas Tersedia Dari {title.substring(17)}</td>
-          <td className="px-6 py-3 text-right font-bold text-gray-900 border-t border-gray-200">{formatIDR(subtotal)}</td>
+        <tr className={!isLast ? "border-b border-slate-200" : ""}>
+          <td className="px-6 py-3 font-bold text-slate-600 pl-10 text-right">Net Kas dari {title.substring(17)}</td>
+          <td className="px-6 py-3 text-right font-bold text-slate-900 font-mono border-t border-slate-200">{formatIDR(subtotal)}</td>
         </tr>
       </>
     );
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:p-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-6 text-center border-b border-gray-100 pb-4">
-          Laporan Arus Kas
-          <p className="text-sm font-normal text-gray-500 mt-1">Periode: {startStr} s/d {endStr}</p>
-        </h2>
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 lg:p-8 shadow-xs space-y-6">
+        <div className="text-center border-b border-slate-100 pb-5">
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight uppercase">
+            Laporan Arus Kas (Cash Flow Statement)
+          </h2>
+          <p className="text-xs font-medium text-slate-500 mt-1">Periode: {startStr} s/d {endStr}</p>
+        </div>
         
         <div className="max-w-4xl mx-auto">
-          <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+          <div className="overflow-hidden rounded-xl border border-slate-200 shadow-2xs">
             <table className="w-full text-left border-collapse">
-              <tbody className="text-sm divide-y divide-gray-100">
+              <tbody className="text-xs divide-y divide-slate-100">
                 
-                {/* Saldo Awal */}
-                <tr className="bg-gray-50">
-                  <td className="px-6 py-4 font-bold text-lg text-gray-800">SALDO AWAL KAS</td>
-                  <td className="px-6 py-4 text-right font-bold text-lg text-gray-900">{formatIDR(saldoAwal)}</td>
+                <tr className="bg-slate-100/80">
+                  <td className="px-6 py-4 font-black text-sm text-slate-900">SALDO AWAL KAS PERIODE INI</td>
+                  <td className="px-6 py-4 text-right font-black text-sm text-slate-900 font-mono">{formatIDR(saldoAwal)}</td>
                 </tr>
 
-                {/* Group Operasional */}
                 {renderTableGroup("A. Arus Kas Dari Kegiatan Operasional", operasional, totalOperasional)}
-
-                {/* Group Investasi */}
                 {renderTableGroup("B. Arus Kas Dari Kegiatan Investasi", investasi, totalInvestasi)}
-
-                {/* Group Pendanaan */}
                 {renderTableGroup("C. Arus Kas Dari Kegiatan Pendanaan", pendanaan, totalPendanaan, true)}
 
-                {/* Net Cash Flow */}
-                <tr className="bg-gray-50 border-t-2 border-gray-300">
-                  <td className="px-6 py-4 font-bold text-gray-800">PERGERAKAN BERSIH ATAS KAS (A+B+C)</td>
-                  <td className={`px-6 py-4 text-right font-bold ${netCashFlow >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                <tr className="bg-slate-100 border-t-2 border-slate-300">
+                  <td className="px-6 py-4 font-extrabold text-slate-800">NET CASH FLOW (A + B + C)</td>
+                  <td className={`px-6 py-4 text-right font-black font-mono ${netCashFlow >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                     {formatIDR(netCashFlow)}
                   </td>
                 </tr>
 
-                {/* Saldo Akhir */}
-                <tr className="bg-gray-100 border-t border-gray-300">
-                  <td className="px-6 py-5 font-bold text-xl text-gray-900 uppercase">SALDO AKHIR KAS</td>
-                  <td className="px-6 py-5 text-right font-bold text-2xl text-blue-800">{formatIDR(saldoAkhir)}</td>
+                <tr className="bg-slate-900 text-white border-t-2 border-slate-900">
+                  <td className="px-6 py-5 font-black text-base uppercase tracking-wider">SALDO AKHIR KAS</td>
+                  <td className="px-6 py-5 text-right font-black text-xl text-emerald-400 font-mono">{formatIDR(saldoAkhir)}</td>
                 </tr>
 
               </tbody>
@@ -227,27 +224,26 @@ const Laporan = () => {
     );
   };
 
-  {/* RENDER DESAIN DENGAN HEADER HIJAU PEKAT & SALDO BERJALAN MATCHING FOTO */}
   const renderDetailBukuKas = () => {
     if (!cashDetailData) return null;
     const { saldoAwal, details } = cashDetailData;
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center flex-wrap gap-3">
+      <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center flex-wrap gap-3">
           <div>
-            <h2 className="text-lg font-bold text-gray-800 flex items-center">
+            <h2 className="text-base font-bold text-slate-900 flex items-center">
               <BookOpen className="w-5 h-5 mr-2 text-emerald-600" />
               Detail Mutasi Buku Kas & Saldo Berjalan
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">Periode: {startStr} s/d {endStr}</p>
+            <p className="text-xs text-slate-500 mt-0.5">Periode: {startStr} s/d {endStr}</p>
           </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
-              <tr className="bg-emerald-700 text-white text-xs uppercase tracking-wider font-bold border-b border-emerald-800">
+              <tr className="bg-emerald-700 text-white text-[11px] uppercase tracking-wider font-extrabold border-b border-emerald-800">
                 <th className="px-4 py-3.5 text-center w-14 border-r border-emerald-600">No</th>
                 <th className="px-4 py-3.5 w-28 border-r border-emerald-600">Tanggal</th>
                 <th className="px-5 py-3.5 w-52 border-r border-emerald-600">Kategori Akun</th>
@@ -257,48 +253,48 @@ const Laporan = () => {
                 <th className="px-5 py-3.5 text-right w-44">Saldo Berjalan (Rp)</th>
               </tr>
             </thead>
-            <tbody className="text-sm divide-y divide-gray-200">
+            <tbody className="text-xs divide-y divide-slate-200">
               {/* Baris Saldo Awal */}
-              <tr className="bg-emerald-50/60 font-semibold text-gray-800 border-b border-emerald-100">
-                <td className="px-4 py-3 text-center text-gray-500">-</td>
-                <td className="px-4 py-3 font-mono text-xs">
+              <tr className="bg-emerald-50/80 font-bold text-slate-900 border-b border-emerald-100">
+                <td className="px-4 py-3 text-center text-slate-400">-</td>
+                <td className="px-4 py-3 font-mono text-[11px] text-slate-600">
                   {new Date(startStr).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                 </td>
-                <td className="px-5 py-3 font-bold text-emerald-900">Saldo Awal Kas</td>
-                <td className="px-5 py-3 text-gray-600 italic">Modal kas awal periode simulasi</td>
-                <td className="px-5 py-3 text-right font-bold text-emerald-700">{formatIDR(saldoAwal)}</td>
-                <td className="px-5 py-3 text-right text-gray-400">Rp0</td>
-                <td className="px-5 py-3 text-right font-extrabold text-gray-900">{formatIDR(saldoAwal)}</td>
+                <td className="px-5 py-3 font-extrabold text-emerald-900">Saldo Awal Kas</td>
+                <td className="px-5 py-3 text-slate-500 italic">Modal kas awal periode simulasi</td>
+                <td className="px-5 py-3 text-right font-extrabold text-emerald-700 font-mono">{formatIDR(saldoAwal)}</td>
+                <td className="px-5 py-3 text-right text-slate-400 font-mono">Rp0</td>
+                <td className="px-5 py-3 text-right font-black text-slate-900 font-mono">{formatIDR(saldoAwal)}</td>
               </tr>
 
               {/* Baris Transaksi Kronologis */}
               {details && details.length > 0 ? (
                 details.map((item, idx) => (
-                  <tr key={item.id || idx} className="hover:bg-gray-50/90 transition-colors border-b border-gray-100">
-                    <td className="px-4 py-3 text-center text-gray-500 font-mono text-xs">{item.no}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
+                  <tr key={item.id || idx} className="hover:bg-slate-50/80 transition-colors border-b border-slate-100">
+                    <td className="px-4 py-3 text-center text-slate-400 font-mono">{item.no}</td>
+                    <td className="px-4 py-3 font-mono text-slate-600 whitespace-nowrap">
                       {new Date(item.transaction_date).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </td>
-                    <td className="px-5 py-3 font-semibold text-gray-800">
+                    <td className="px-5 py-3 font-bold text-slate-800">
                       {item.account_name}
                     </td>
-                    <td className="px-5 py-3 text-gray-600 text-xs sm:text-sm">
+                    <td className="px-5 py-3 text-slate-600">
                       {item.description}
                     </td>
-                    <td className="px-5 py-3 text-right font-semibold text-emerald-600 whitespace-nowrap">
+                    <td className="px-5 py-3 text-right font-bold text-emerald-600 font-mono whitespace-nowrap">
                       {item.cash_in > 0 ? formatIDR(item.cash_in) : 'Rp0'}
                     </td>
-                    <td className="px-5 py-3 text-right font-semibold text-blue-600 whitespace-nowrap">
+                    <td className="px-5 py-3 text-right font-bold text-rose-600 font-mono whitespace-nowrap">
                       {item.cash_out > 0 ? formatIDR(item.cash_out) : 'Rp0'}
                     </td>
-                    <td className="px-5 py-3 text-right font-extrabold text-gray-900 whitespace-nowrap">
+                    <td className="px-5 py-3 text-right font-black text-slate-900 font-mono whitespace-nowrap">
                       {formatIDR(item.saldo_berjalan)}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-12 text-center text-slate-400">
                     Belum ada riwayat mutasi transaksi pada periode ini.
                   </td>
                 </tr>
@@ -311,87 +307,78 @@ const Laporan = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Laporan Keuangan</h1>
-        <p className="text-gray-500 mt-1">Analisis performa keuangan bisnis Anda dengan detail laporan.</p>
+    <div className="space-y-8 animate-fade-in-scale">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Laporan Keuangan & Mutasi Kas</h1>
+        <p className="text-xs text-slate-500 mt-1">Analisis laporan Laba Rugi (Profit & Loss), Arus Kas (Cash Flow), dan Buku Besar Mutasi Saldo.</p>
       </div>
 
-      {/* Filter Card / Navigasi Bulan */}
-      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+      {/* Navigasi Bulan */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center justify-between shadow-xs">
         <button 
           onClick={prevMonth}
-          className="p-2 flex items-center text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="p-2 flex items-center text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
         >
-          <ChevronLeft className="w-5 h-5 mr-1" />
-          <span className="hidden sm:inline font-medium">Bulan Sebelumnya</span>
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          <span className="hidden sm:inline">Bulan Sebelumnya</span>
         </button>
         
-        <h2 className="text-xl font-bold text-gray-800">
+        <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
           {monthYearString}
         </h2>
         
         <button 
           onClick={nextMonth}
-          className="p-2 flex items-center text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="p-2 flex items-center text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
         >
-          <span className="hidden sm:inline font-medium">Bulan Selanjutnya</span>
-          <ChevronRight className="w-5 h-5 ml-1" />
+          <span className="hidden sm:inline">Bulan Selanjutnya</span>
+          <ChevronRight className="w-4 h-4 ml-1" />
         </button>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex space-x-2 border-b border-gray-200 flex-wrap">
+      {/* Sliding Pill Tabs Navigation */}
+      <div className="flex bg-slate-100 p-1.5 rounded-2xl max-w-xl mx-auto border border-slate-200/80">
         <button
           onClick={() => setActiveTab('laba-rugi')}
-          className={`px-6 py-3 font-medium text-sm transition-colors relative ${
+          className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
             activeTab === 'laba-rugi' 
-              ? 'text-red-600 font-bold' 
-              : 'text-gray-500 hover:text-gray-800'
+              ? 'bg-white text-rose-700 shadow-xs font-bold' 
+              : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           Laba Rugi (Profit/Loss)
-          {activeTab === 'laba-rugi' && (
-            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600"></div>
-          )}
         </button>
         <button
           onClick={() => setActiveTab('arus-kas')}
-          className={`px-6 py-3 font-medium text-sm transition-colors relative ${
+          className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
             activeTab === 'arus-kas' 
-              ? 'text-red-600 font-bold' 
-              : 'text-gray-500 hover:text-gray-800'
+              ? 'bg-white text-rose-700 shadow-xs font-bold' 
+              : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           Arus Kas (Cash Flow)
-          {activeTab === 'arus-kas' && (
-            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600"></div>
-          )}
         </button>
         <button
           onClick={() => setActiveTab('detail')}
-          className={`px-6 py-3 font-medium text-sm transition-colors relative ${
+          className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
             activeTab === 'detail' 
-              ? 'text-emerald-700 font-bold' 
-              : 'text-gray-500 hover:text-gray-800'
+              ? 'bg-white text-emerald-700 shadow-xs font-bold' 
+              : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          Detail Buku Kas (Mutasi Transaksi)
-          {activeTab === 'detail' && (
-            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-700"></div>
-          )}
+          Buku Kas (Mutasi)
         </button>
       </div>
 
-      {/* Content Area */}
+      {/* Report Content View */}
       <div className="min-h-[400px]">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-64 bg-white rounded-xl border border-gray-100 shadow-sm mt-4">
-            <Loader2 className="w-8 h-8 animate-spin text-red-500 mb-4" />
-            <p className="text-gray-500">Mengkalkulasi laporan keuangan...</p>
+          <div className="flex flex-col items-center justify-center min-h-[300px] bg-white rounded-2xl border border-slate-200 text-slate-400">
+            <Loader2 className="w-8 h-8 animate-spin text-rose-600 mb-3" />
+            <p className="text-xs font-semibold">Mengkalkulasi laporan keuangan...</p>
           </div>
         ) : (
-          <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="animate-fade-in-scale">
             {activeTab === 'laba-rugi' && renderLabaRugi()}
             {activeTab === 'arus-kas' && renderArusKas()}
             {activeTab === 'detail' && renderDetailBukuKas()}
