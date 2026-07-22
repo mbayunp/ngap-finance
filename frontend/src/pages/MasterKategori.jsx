@@ -24,7 +24,13 @@ const MasterKategori = () => {
       }
     } catch (error) {
       console.error('Error fetching COA:', error);
-      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal mengambil data kategori.' });
+      Swal.fire({ 
+        icon: 'error', 
+        title: 'Gagal', 
+        text: 'Gagal mengambil data kategori.',
+        background: '#0f172a',
+        color: '#f8fafc'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +65,13 @@ const MasterKategori = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.account_name.trim()) {
-      Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Nama Akun wajib diisi' });
+      Swal.fire({ 
+        icon: 'warning', 
+        title: 'Perhatian', 
+        text: 'Nama Akun wajib diisi',
+        background: '#0f172a',
+        color: '#f8fafc'
+      });
       return;
     }
 
@@ -67,16 +79,34 @@ const MasterKategori = () => {
     try {
       if (formData.id) {
         await axios.put(`${import.meta.env.VITE_API_URL}/api/coa/${formData.id}`, formData);
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Kategori berhasil diupdate!' });
+        Swal.fire({ 
+          icon: 'success', 
+          title: 'Berhasil', 
+          text: 'Kategori berhasil diupdate!',
+          background: '#0f172a',
+          color: '#f8fafc'
+        });
       } else {
         await axios.post(`${import.meta.env.VITE_API_URL}/api/coa`, formData);
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Kategori baru berhasil ditambahkan!' });
+        Swal.fire({ 
+          icon: 'success', 
+          title: 'Berhasil', 
+          text: 'Kategori baru berhasil ditambahkan!',
+          background: '#0f172a',
+          color: '#f8fafc'
+        });
       }
       closeModal();
       fetchCategories();
     } catch (error) {
       console.error('Error saving COA:', error);
-      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menyimpan kategori!' });
+      Swal.fire({ 
+        icon: 'error', 
+        title: 'Gagal', 
+        text: 'Gagal menyimpan kategori!',
+        background: '#0f172a',
+        color: '#f8fafc'
+      });
     } finally {
       setIsSaving(false);
     }
@@ -88,86 +118,101 @@ const MasterKategori = () => {
       text: "Kategori ini akan dihapus. Jika kategori ini sudah memiliki transaksi, penghapusan mungkin akan gagal.",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Ya, hapus!'
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#3b82f6',
+      confirmButtonText: 'Ya, hapus!',
+      background: '#0f172a',
+      color: '#f8fafc'
     });
     
     if (result.isConfirmed) {
       try {
         await axios.delete(`${import.meta.env.VITE_API_URL}/api/coa/${id}`);
-        Swal.fire('Terhapus!', 'Kategori berhasil dihapus!', 'success');
+        Swal.fire({ 
+          title: 'Terhapus!', 
+          text: 'Kategori berhasil dihapus!', 
+          icon: 'success',
+          background: '#0f172a',
+          color: '#f8fafc'
+        });
         fetchCategories();
       } catch (error) {
         console.error('Error deleting COA:', error);
         const errMsg = error.response?.data?.message || 'Gagal menghapus kategori.';
-        Swal.fire('Gagal!', errMsg, 'error');
+        Swal.fire({ 
+          title: 'Gagal!', 
+          text: errMsg, 
+          icon: 'error',
+          background: '#0f172a',
+          color: '#f8fafc'
+        });
       }
     }
   };
 
   const getTypeColor = (type) => {
     switch (type) {
-      case 'Operasional': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'Investasi': return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'Pendanaan': return 'bg-orange-100 text-orange-700 border-orange-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'Operasional': return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
+      case 'Investasi': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+      case 'Pendanaan': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+      default: return 'bg-slate-800 text-slate-300 border-slate-700';
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-8 animate-fade-in-scale">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-6 rounded-2xl border border-slate-800/80 backdrop-blur-md">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Master Kategori (CoA)</h1>
-          <p className="text-gray-500 mt-1">Kelola daftar akun kategori untuk Pemasukan dan Pengeluaran.</p>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">Master Kategori (Chart of Accounts)</h1>
+          <p className="text-xs text-slate-400 mt-1">Kelola struktur akun kategori kas untuk klasifikasi Pemasukan & Pengeluaran.</p>
         </div>
         <button
           onClick={() => openModal()}
-          className="flex items-center px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+          className="flex items-center px-5 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-900/30 transition-all cursor-pointer"
         >
-          <Plus className="w-5 h-5 mr-2" />
-          Tambah Kategori
+          <Plus className="w-4 h-4 mr-2" />
+          Tambah Kategori Baru
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Tabel Kategori */}
+      <div className="bg-slate-900/80 rounded-2xl border border-slate-800/80 overflow-hidden shadow-2xl backdrop-blur-md">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
-                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs w-32">Kode Akun</th>
-                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Nama Akun</th>
-                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs w-48">Tipe Arus Kas</th>
-                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs text-center w-32">Aksi</th>
+              <tr className="bg-slate-950/60 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-800">
+                <th className="px-6 py-3.5 w-36">Kode Akun</th>
+                <th className="px-6 py-3.5">Nama Akun</th>
+                <th className="px-6 py-3.5 w-48">Tipe Arus Kas</th>
+                <th className="px-6 py-3.5 text-center w-28">Aksi</th>
               </tr>
             </thead>
-            <tbody className="text-sm divide-y divide-gray-50">
+            <tbody className="text-xs divide-y divide-slate-800/60">
               {isLoading ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-red-500" />
+                  <td colSpan="4" className="px-6 py-12 text-center text-slate-500">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-rose-500" />
                     Memuat kategori...
                   </td>
                 </tr>
               ) : categories.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
-                    <Tags className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                  <td colSpan="4" className="px-6 py-12 text-center text-slate-500">
+                    <Tags className="w-8 h-8 mx-auto mb-2 text-slate-600" />
                     Belum ada data kategori.
                   </td>
                 </tr>
               ) : (
                 categories.map((row) => (
-                  <tr key={row.id} className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-500 font-mono">
+                  <tr key={row.id} className="hover:bg-slate-800/40 transition-colors">
+                    <td className="px-6 py-4 font-mono font-bold text-slate-400">
                       {row.account_code}
                     </td>
-                    <td className="px-6 py-4 font-medium text-gray-800">
+                    <td className="px-6 py-4 font-bold text-slate-200">
                       {row.account_name}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getTypeColor(row.account_type)}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border ${getTypeColor(row.account_type)}`}>
                         {row.account_type}
                       </span>
                     </td>
@@ -175,14 +220,14 @@ const MasterKategori = () => {
                       <div className="flex justify-center space-x-2">
                         <button
                           onClick={() => openModal(row)}
-                          className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors cursor-pointer"
                           title="Edit"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(row.id)}
-                          className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                           title="Hapus"
                         >
                           <Trash className="w-4 h-4" />
@@ -197,59 +242,62 @@ const MasterKategori = () => {
         </div>
       </div>
 
-      {/* Modal Form */}
+      {/* Modal Form Kategori */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">
-                {formData.id ? 'Edit Kategori' : 'Tambah Kategori Baru'}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in-scale">
+          <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/40">
+              <h3 className="text-base font-bold text-white">
+                {formData.id ? 'Edit Kategori Akun' : 'Tambah Kategori Baru'}
               </h3>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100">
+              <button 
+                onClick={closeModal} 
+                className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Nama Akun Kategori</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-2">Nama Akun Kategori</label>
                 <input
                   type="text"
                   required
-                  placeholder="Misal: Biaya Internet"
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                  placeholder="Misal: Biaya Internet & Utility"
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-100 text-xs font-medium outline-none transition-all"
                   value={formData.account_name}
                   onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipe Arus Kas</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-2">Tipe Arus Kas</label>
                 <select
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-100 text-xs font-medium outline-none transition-all cursor-pointer"
                   value={formData.account_type}
                   onChange={(e) => setFormData({ ...formData, account_type: e.target.value })}
                 >
-                  <option value="Operasional">Operasional (Biaya Pokok, Pendapatan, OPEX)</option>
-                  <option value="Investasi">Investasi (Jual/Beli Aset)</option>
+                  <option value="Operasional">Operasional (Beban Pokok, Pendapatan, OPEX)</option>
+                  <option value="Investasi">Investasi (Pembelian/Penjualan Aset)</option>
                   <option value="Pendanaan">Pendanaan (Modal, Hutang, Pinjaman)</option>
                 </select>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="flex items-center px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="flex items-center px-5 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-900/30 transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
+                  {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                   {isSaving ? 'Menyimpan...' : 'Simpan Kategori'}
                 </button>
               </div>
