@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { 
   Home, 
   TrendingUp, 
@@ -10,10 +11,32 @@ import {
   Radio, 
   Tags, 
   X,
-  UserCheck
+  UserCheck,
+  LogOut
 } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    const confirm = await Swal.fire({
+      title: 'Keluar dari Sesi?',
+      text: 'Anda akan keluar dari aplikasi Ngap Finance.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, Keluar'
+    });
+
+    if (confirm.isConfirmed) {
+      logout();
+      navigate('/login', { replace: true });
+    }
+  };
+
   const menuGroups = [
     {
       title: 'OVERVIEW',
@@ -121,16 +144,25 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           ))}
         </div>
 
-        {/* Footer Admin User Profile Card */}
+        {/* Footer Admin User Profile & Logout */}
         <div className="p-4 border-t border-slate-100 bg-slate-50/50 shrink-0">
-          <div className="flex items-center space-x-3 p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
-            <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs border border-rose-100">
-              <UserCheck className="w-4 h-4" />
+          <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+            <div className="flex items-center space-x-2.5 min-w-0 flex-1">
+              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs border border-rose-100 shrink-0">
+                <UserCheck className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-slate-800 truncate">{user?.name || 'Administrator'}</p>
+                <p className="text-[10px] text-slate-400 font-medium truncate font-mono">@{user?.username || 'admin'}</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-slate-800 truncate">Administrator</p>
-              <p className="text-[10px] text-slate-400 truncate">admin@ngapfinance.id</p>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0 ml-1"
+              title="Keluar / Logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </aside>

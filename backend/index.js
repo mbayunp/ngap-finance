@@ -10,6 +10,7 @@ app.use(cors());
 app.use(express.json()); // Parsing application/json
 
 // Routes
+const authRoutes = require('./routes/authRoutes');
 const salesRoutes = require('./routes/salesRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const cashbookRoutes = require('./routes/cashbookRoutes');
@@ -20,6 +21,7 @@ const incomeRoutes = require('./routes/incomeRoutes');
 const coaRoutes = require('./routes/coaRoutes');
 
 // API Endpoints
+app.use('/api/auth', authRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/cashbook', cashbookRoutes);
